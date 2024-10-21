@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to CodeGradr - Email Confirmation</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .email-header {
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+        .email-content {
+            padding: 30px;
+        }
+        h1 {
+            color: #ffffff;
+            font-size: 24px;
+            margin: 0;
+        }
+        h2 {
+            color: #007bff;
+            font-size: 20px;
+            margin-top: 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .logo {
+            max-width: 150px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <img src="https://example.com/codegradr-logo.png" alt="CodeGradr Logo" class="logo">
+            <h1>Welcome to CodeGradr</h1>
+        </div>
+        <div class="email-content">
+            <h2>Hello, {{ user.first_name }}!</h2>
+            <p>Thank you for choosing CodeGradr. We're excited to have you on board! To get started, please confirm your email address by clicking the button below:</p>
+            <a href="{{ confirmation_url }}" class="button">Confirm Your Email</a>
+            <p>This link will expire in 24 hours for security reasons. If you don't confirm your email within this time, you may need to request a new confirmation email.</p>
+            <p>If you didn't sign up for a CodeGradr account, you can safely ignore this email.</p>
+            <p>Best regards,<br>The CodeGradr Team</p>
+        </div>
+        <div class="footer">
+            <p>&copy; {{ year }} CodeGradr. All rights reserved.</p>
+            <p>123 Coding Street, Tech City, TC 12345</p>
+        </div>
+    </div>
+</body>
+</html>
