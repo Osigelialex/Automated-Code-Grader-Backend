@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from .models import CustomUser, Token
+from .models import CustomUser
 from django.db import transaction
 from .email_manager import email_manager
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -14,7 +14,8 @@ from .serializers import (
     ForgottenPasswordSerializer,
     MyTokenObtainPairSerializer,
     SendActivationTokenSerializer,
-    ResetPasswordSerializer
+    ResetPasswordSerializer,
+    ActivateAccountSerializer
     )
 
 
@@ -63,38 +64,19 @@ class SendActivationTokenView(APIView):
 
 class ActivateAccountView(APIView):
     """
-    View to activate user account
+    View to activate user account using UID and token
     """
     @transaction.atomic
     def get(self, request):
-        uid = request.GET.get('uid')
-        token_key = request.query_params.get('token')
-        if not uid or not token_key:
-            return self.invalid_link_response()
-
-        try:
-            user_id = base64.b64decode(uid).decode('utf-8')
-            user = CustomUser.objects.get(pk=user_id)
-            token = Token.objects.get(key=token_key)
-        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist, Token.DoesNotExist):
-            return self.invalid_link_response()
-
-        if token.is_used or token.is_expired():
-            return self.invalid_link_response()
-
-        # update the users account status
+        serializer = ActivateAccountSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token = serializer.validated_data['token']
         user.is_active = True
         token.is_used = True
         user.save()
         token.save()
-
-        return Response({'message': 'Your account has been confirmed. You can now login'},status=status.HTTP_200_OK)
-
-    def invalid_link_response(self):
-        return Response(
-            {'message': 'Activation link is invalid!'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response({ 'message': 'Account activated successfully'}, status=status.HTTP_200_OK)
 
 
 class ForgottenPasswordView(APIView):
@@ -112,7 +94,7 @@ class ForgottenPasswordView(APIView):
             return Response({ 'message': f'Password reset instructions sent to {email}'}, status=status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
             return Response({ 'message': 'No user with that email address'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
 
 class ResetPasswordView(APIView):
     """

@@ -5,6 +5,7 @@ from .email_manager import email_manager
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
 import re
+import base64
 
 
 class BaseRegisterSerializer(serializers.ModelSerializer):
@@ -89,6 +90,30 @@ class LecturerRegistrationSerializer(BaseRegisterSerializer):
 
 class ForgottenPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
+
+
+class ActivateAccountSerializer(serializers.Serializer):
+    uid = serializers.CharField(required=True)
+    token = serializers.CharField(required=True)
+    
+    def validate(self, data):
+        try:
+            user_id = base64.b64decode(data['uid']).decode('utf-8')
+            user = CustomUser.objects.get(pk=user_id)
+            token = Token.objects.get(key=data['token'])
+
+            if token.is_used or token.is_expired():
+                raise serializers.ValidationError('Token is invalid or expired')
+            
+            data['user'] = user
+            data['token'] = token
+            return data
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError('Invalid user')
+        except Token.DoesNotExist:
+            raise serializers.ValidationError('Invalid token')
+        except (TypeError, ValueError, OverflowError):
+            raise serializers.ValidationError('Invalid uid')
 
 
 class ResetPasswordSerializer(serializers.Serializer):
