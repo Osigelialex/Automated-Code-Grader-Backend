@@ -5,10 +5,16 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from .models import CustomUser, Token
-from .tokens import account_activation_token
 from django.utils import timezone
 from django.db import transaction
-from .serializers import StudentRegistrationSerializer, LecturerRegistrationSerializer
+from .email_manager import email_manager
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import (
+    StudentRegistrationSerializer,
+    LecturerRegistrationSerializer,
+    ForgottenPasswordSerializer,
+    MyTokenObtainPairSerializer,
+    SendActivationTokenSerializer)
 
 
 class RegisterStudentView(generics.CreateAPIView):
@@ -39,6 +45,22 @@ class RegisterLecturerView(generics.CreateAPIView):
         return Response({'message': 'Please check your email to verify your account'}, status=status.HTTP_201_CREATED)
 
 
+class LoginView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+
+class SendActivationTokenView(APIView):
+    """
+    Send an account activation token to a user
+    """
+    def post(self, request, *args, **kwargs):
+        serializer = SendActivationTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        email_manager.send_activation_email(user)
+        return Response({ 'message': 'Please check your email to verify your account'}, status=status.HTTP_200_OK)
+
+
 class ActivateAccountView(APIView):
     """
     View to activate user account
@@ -47,7 +69,6 @@ class ActivateAccountView(APIView):
     def get(self, request):
         uid = request.GET.get('uid')
         token_key = request.query_params.get('token')
-
         if not uid or not token_key:
             return self.invalid_link_response()
 
@@ -61,20 +82,29 @@ class ActivateAccountView(APIView):
         if token.is_used or token.expires_at < timezone.now():
             return self.invalid_link_response()
 
-        if account_activation_token.check_token(user, token_key):
-            user.is_active = True
-            token.is_used = True
-            user.save()
-            token.save()
-            return Response(
-                {'message': 'Your account has been confirmed. You can now login'},
-                status=status.HTTP_200_OK
-            )
+        # update the users account status
+        user.is_active = True
+        token.is_used = True
+        user.save()
+        token.save()
 
-        return self.invalid_link_response()
+        return Response({'message': 'Your account has been confirmed. You can now login'},status=status.HTTP_200_OK)
 
     def invalid_link_response(self):
         return Response(
             {'message': 'Activation link is invalid!'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+class ForgottenPasswordView(APIView):
+    """
+    View to reset a users password if forgotten
+    """
+    def post(self, request):
+        serialzer = ForgottenPasswordSerializer(data=request.data)
+        serialzer.is_valid(raise_exception=True)
+        user = CustomUser.objects.filter(email=request.data)
+        email_manager.send_password_reset_email(user)
+        return Response({ 'message': f"An email to reset your password has been sent to {request.data}"},
+                        status=status.HTTP_200_OK)

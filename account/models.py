@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AbstractUser, BaseUserManager
-from django.utils.translation import gettext_lazy as _
 
 
 class CustomUserManager(BaseUserManager):
@@ -70,7 +69,7 @@ class Lecturer(models.Model):
 
 
 class Token(models.Model):
-    key = models.CharField(max_length=40, primary_key=True)
+    key = models.CharField(max_length=150, primary_key=True)
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     is_used = models.BooleanField(default=False)
     expires_at = models.DateTimeField()

@@ -10,9 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-from pathlib import Path
 import os
 import environ
+from django.utils import timezone
+from pathlib import Path
 
 env = environ.Env(
     DEBUG=(bool, False)
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
 
     # third party
     'rest_framework',
+    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
@@ -143,8 +145,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # REST Framework settings
 
 REST_FRAMEWORK = {
-    # Use Django's standard `django.contrib.auth` permissions,
-    # or allow read-only access for unauthenticated users.
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+# Simple JWT settings
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timezone.timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timezone.timedelta(days=3)
 }
 
 # Configure django to use custom user model
@@ -155,3 +164,5 @@ EMAIL_HOST = env('EMAIL_HOST')
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = env('EMAIL_PORT')
+
+DEFAULT_FROM_EMAIL='noreply@codegradr.com'
