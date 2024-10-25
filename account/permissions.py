@@ -1,11 +1,17 @@
 from rest_framework.permissions import BasePermission
 
 
-class IsStudent(BasePermission):
+class IsStudentPermission(BasePermission):
+    """
+    Permission class to only allow students to access a view
+    """
     def has_permission(self, request, view):
-        return request.user.role == 'student'
+        return request.user and request.user.is_authenticated and request.user.role == 'STUDENT'
 
 
-class IsLecturer(BasePermission):
+class IsLecturerPermission(BasePermission):
+    """
+    Permission class to only allow lecturers to access a view
+    """
     def has_permission(self, request, view):
-        return request.user.role == 'lecturer'
+        return request.user and request.user.is_authenticated and request.user.role == 'LECTURER'

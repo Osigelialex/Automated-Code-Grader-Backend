@@ -49,6 +49,7 @@ INSTALLED_APPS = [
 
     # local apps
     'account',
+    'course_management',
 
     # third party
     'rest_framework',

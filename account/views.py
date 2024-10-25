@@ -38,7 +38,7 @@ class RegisterStudentView(BaseRegisterView):
     serializer_class = StudentRegistrationSerializer
 
 
-class RegisterLecturerView(generics.CreateAPIView):
+class RegisterLecturerView(BaseRegisterView):
     """
     Register lecturers into the system
     """
