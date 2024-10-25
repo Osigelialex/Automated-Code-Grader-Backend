@@ -5,7 +5,6 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from .models import CustomUser, Token
-from django.utils import timezone
 from django.db import transaction
 from .email_manager import email_manager
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -14,14 +13,15 @@ from .serializers import (
     LecturerRegistrationSerializer,
     ForgottenPasswordSerializer,
     MyTokenObtainPairSerializer,
-    SendActivationTokenSerializer)
+    SendActivationTokenSerializer,
+    ResetPasswordSerializer
+    )
 
 
-class RegisterStudentView(generics.CreateAPIView):
+class BaseRegisterView(generics.CreateAPIView):
     """
-    Register students into the system
+    Base class for registering users into the system
     """
-    serializer_class = StudentRegistrationSerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
@@ -29,6 +29,13 @@ class RegisterStudentView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'message': 'Please check your email to verify your account'}, status=status.HTTP_201_CREATED)
+
+
+class RegisterStudentView(BaseRegisterView):
+    """
+    Register students into the system
+    """
+    serializer_class = StudentRegistrationSerializer
 
 
 class RegisterLecturerView(generics.CreateAPIView):
@@ -36,13 +43,6 @@ class RegisterLecturerView(generics.CreateAPIView):
     Register lecturers into the system
     """
     serializer_class = LecturerRegistrationSerializer
-    permission_classes = [AllowAny]
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({'message': 'Please check your email to verify your account'}, status=status.HTTP_201_CREATED)
 
 
 class LoginView(TokenObtainPairView):
@@ -79,7 +79,7 @@ class ActivateAccountView(APIView):
         except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist, Token.DoesNotExist):
             return self.invalid_link_response()
 
-        if token.is_used or token.expires_at < timezone.now():
+        if token.is_used or token.is_expired():
             return self.invalid_link_response()
 
         # update the users account status
@@ -102,9 +102,25 @@ class ForgottenPasswordView(APIView):
     View to reset a users password if forgotten
     """
     def post(self, request):
-        serialzer = ForgottenPasswordSerializer(data=request.data)
-        serialzer.is_valid(raise_exception=True)
-        user = CustomUser.objects.filter(email=request.data)
-        email_manager.send_password_reset_email(user)
-        return Response({ 'message': f"An email to reset your password has been sent to {request.data}"},
-                        status=status.HTTP_200_OK)
+        serializer = ForgottenPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+
+        try:
+            user = CustomUser.objects.get(email=email)
+            email_manager.send_password_reset_email(user)
+            return Response({ 'message': f'Password reset instructions sent to {email}'}, status=status.HTTP_200_OK)
+        except CustomUser.DoesNotExist:
+            return Response({ 'message': 'No user with that email address'}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+class ResetPasswordView(APIView):
+    """
+    View to reset a users password
+    """
+    def post(self, request, token):
+        request.data['token'] = token
+        serializer = ResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'message': 'Password reset successful'}, status=status.HTTP_200_OK)

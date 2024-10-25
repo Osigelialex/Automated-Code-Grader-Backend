@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.utils import timezone
 
 
 class CustomUserManager(BaseUserManager):
@@ -70,10 +71,16 @@ class Lecturer(models.Model):
 
 class Token(models.Model):
     key = models.CharField(max_length=150, primary_key=True)
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     is_used = models.BooleanField(default=False)
     expires_at = models.DateTimeField()
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.key
+    
+    def is_expired(self):
+        """
+        Utility function to check if a token has expired
+        """
+        return timezone.now() > self.expires_at
