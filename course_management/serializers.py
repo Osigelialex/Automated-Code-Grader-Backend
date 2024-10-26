@@ -6,8 +6,8 @@ import re
 class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
-        fields = ['title', 'description', 'course_code', 'course_units', 'lecturer', 'course_join_code']
-        read_only_fields = ['course_join_code']
+        fields = ['id', 'title', 'description', 'course_code', 'course_units', 'lecturer', 'course_join_code']
+        read_only_fields = ['course_join_code', 'id']
 
     def validate_course_units(self, value):
         if value < 1:

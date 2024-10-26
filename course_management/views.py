@@ -64,3 +64,21 @@ class LecturerCourseListView(generics.ListAPIView):
 
     def get_queryset(self):
         return Course.objects.filter(lecturer=self.request.user)
+
+
+class UnenrollView(APIView):
+    """
+    View to unenroll a student from a course
+    """
+    permission_classes = [IsStudentPermission]
+
+    def delete(self, request, course_id):
+        course = Course.objects.filter(id=course_id).first()
+        if not course:
+            return Response({ 'message': 'Course not found' }, status=status.HTTP_404_NOT_FOUND)
+        
+        if request.user not in course.students.all():
+            return Response({ 'message': f'You are not enrolled in {course.course_code}-{course.title}' }, status=status.HTTP_400_BAD_REQUEST)
+
+        course.students.remove(request.user)
+        return Response({ 'message': f'Unenrolled from {course.course_code}-{course.title}' })
