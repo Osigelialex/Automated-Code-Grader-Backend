@@ -42,3 +42,25 @@ class JoinCourseView(APIView):
 
         course.students.add(request.user)
         return Response({'message': f'You have successfully joined {course.course_code}-{course.title}'}, status=status.HTTP_200_OK)
+
+
+class StudentCourseListView(generics.ListAPIView):
+    """
+    View to list courses a student is enrolled in
+    """
+    permission_classes = [IsStudentPermission]
+    serializer_class = CourseSerializer
+
+    def get_queryset(self):
+        return Course.objects.filter(students=self.request.user)
+
+
+class LecturerCourseListView(generics.ListAPIView):
+    """
+    View to list courses a lecturer is teaching
+    """
+    permission_classes = [IsLecturerPermission]
+    serializer_class = CourseSerializer
+
+    def get_queryset(self):
+        return Course.objects.filter(lecturer=self.request.user)
