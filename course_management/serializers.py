@@ -19,3 +19,11 @@ class CourseSerializer(serializers.ModelSerializer):
         if not re.match(pattern, course_code):
             raise serializers.ValidationError('Course code must follow the format CSCxxx')
         return course_code
+
+
+class JoinCourseSerializer(serializers.Serializer):
+    course_join_code = serializers.CharField()
+
+
+class MessageSerializer(serializers.Serializer):
+    message = serializers.CharField()

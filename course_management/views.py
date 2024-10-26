@@ -2,8 +2,9 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from account.permissions import IsLecturerPermission, IsStudentPermission
-from .serializers import CourseSerializer
+from .serializers import CourseSerializer, JoinCourseSerializer, MessageSerializer
 from .models import Course
+from drf_spectacular.utils import extend_schema
 
 
 class CourseCreationView(generics.CreateAPIView):
@@ -27,9 +28,20 @@ class JoinCourseView(APIView):
     View to allow students to join a course
     """
     permission_classes = [IsStudentPermission]
+    serializer_class = JoinCourseSerializer
 
+    @extend_schema(
+            responses={
+                200: MessageSerializer,
+                404: MessageSerializer,
+                400: MessageSerializer
+            }
+    )
     def post(self, request, *args, **kwargs):
-        course_join_code = request.data.get('course_join_code')
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        course_join_code = serializer.validated_data['course_join_code']
         course = Course.objects.filter(course_join_code=course_join_code).first()
         if not course:
             return Response({'message': 'Course joining code invalid'}, status=status.HTTP_404_NOT_FOUND)
@@ -72,6 +84,13 @@ class UnenrollView(APIView):
     """
     permission_classes = [IsStudentPermission]
 
+    @extend_schema(
+            responses={
+                200: MessageSerializer,
+                404: MessageSerializer,
+                400: MessageSerializer
+            }
+    )
     def delete(self, request, course_id):
         course = Course.objects.filter(id=course_id).first()
         if not course:

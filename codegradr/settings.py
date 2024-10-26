@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     # third party
     'rest_framework',
     'rest_framework_simplejwt',
+    'drf_spectacular'
 ]
 
 MIDDLEWARE = [
@@ -146,6 +147,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # REST Framework settings
 
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
@@ -155,6 +157,16 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timezone.timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timezone.timedelta(days=3)
+}
+
+# Spectacular settings
+SPECTACULAR_SETTINGS = {
+    "TITLE": "CODEGRADR API",
+    "DESCRIPTION": "API documentation for codegradr, an automated grading system for programming assignments",
+    "VERSION": "1.0.0",
+    "SCHEMA_PATH_PREFIX": r'/api/v[0-9]',
+    "SERVE_INCLUDE_SCHEMA": False,
+    "DISABLE_ERRORS_AND_WARNINGS": True,
 }
 
 # Configure django to use custom user model
