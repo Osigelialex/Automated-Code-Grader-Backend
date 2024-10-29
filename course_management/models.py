@@ -2,6 +2,7 @@ import random
 import string
 from django.db import models
 from account.models import CustomUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 
 class Course(models.Model):
@@ -12,7 +13,7 @@ class Course(models.Model):
     description = models.TextField(null=True, blank=True)
     lecturer = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     course_code = models.CharField(max_length=10, unique=True)
-    course_units = models.PositiveIntegerField()
+    course_units = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)])
     students = models.ManyToManyField(CustomUser, related_name='courses')
     course_join_code = models.CharField(max_length=10, unique=True)
     course_open = models.BooleanField(default=True)
@@ -29,7 +30,7 @@ class Course(models.Model):
     def save(self, *args, **kwargs):
         if not self.course_join_code:
             self.course_join_code = self.generate_course_join_code()
-    
+
         # Ensure that the course join code is unique
         while Course.objects.filter(course_join_code=self.course_join_code).exists():
             self.course_join_code = self.generate_course_join_code()

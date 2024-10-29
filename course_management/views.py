@@ -7,12 +7,15 @@ from .models import Course
 from drf_spectacular.utils import extend_schema
 
 
-class CourseCreationView(generics.CreateAPIView):
+class CourseListCreateView(generics.ListCreateAPIView):
     """
-    View to create a course
+    Create a new course or list exiting courses a user is teaching
     """
     permission_classes = [IsLecturerPermission]
     serializer_class = CourseSerializer
+
+    def get_queryset(self):
+        return Course.objects.filter(lecturer=self.request.user)
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
@@ -65,17 +68,6 @@ class StudentCourseListView(generics.ListAPIView):
 
     def get_queryset(self):
         return Course.objects.filter(students=self.request.user)
-
-
-class LecturerCourseListView(generics.ListAPIView):
-    """
-    View to list courses a lecturer is teaching
-    """
-    permission_classes = [IsLecturerPermission]
-    serializer_class = CourseSerializer
-
-    def get_queryset(self):
-        return Course.objects.filter(lecturer=self.request.user)
 
 
 class UnenrollView(APIView):
