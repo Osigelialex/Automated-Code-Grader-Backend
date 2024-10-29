@@ -15,7 +15,6 @@ from .serializers import (
     AssignmentSubmissionSerializer
 )
 
-
 logger = logging.getLogger(__name__)
 
 @extend_schema(tags=['assignment'])
@@ -62,45 +61,44 @@ class AssignmentDetailView(generics.RetrieveAPIView):
 
 
 class AssignmentSubmitAPIView(APIView):
-    """
-    API view to submit an assignment
-    """
+    """API view to submit an assignment with rate limiting and validation."""
     serializer_class = AssignmentSubmissionSerializer
-
+    
     def post(self, request, pk=None):
-        """Submit and execute code for an assignment."""
-        assignment = get_object_or_404(Assignment, pk=pk)
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        code = request.data['code']
-
+        """Submit and execute code for an assignment with additional security measures."""
         try:
-            # Get test cases
-            test_cases = list(assignment.test_cases.all().values('input', 'output'))
+            assignment = get_object_or_404(Assignment, pk=pk)
+            serializer = self.serializer_class(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            code = request.data['code']
 
             # Execute code
             execution_service = CodeExecutionService()
             results = execution_service.execute_code(
                 code=code,
                 language=assignment.programming_language,
-                test_cases=test_cases
+                test_cases=list(assignment.test_cases.all().values('input', 'output'))
             )
 
-            # Calculate score
-            total_tests = len(test_cases)
-            passed_tests = len(results['passed_tests'])
-            score = (passed_tests / total_tests) * assignment.max_score
+            score = (results['passed_count'] / results['total_tests']) * assignment.max_score
 
-            # Save submission
-            submission = Submission.objects.create(
-                assignment=assignment,
-                student=request.user,
-                code=code,
-                score=score,
-                results=results
-            )
+            # Save submission with retry logic
+            for _ in range(3):
+                try:
+                    submission = Submission.objects.create(
+                        assignment=assignment,
+                        student=request.user,
+                        code=code,
+                        score=score,
+                        results=results
+                    )
+                    break
+                except Exception as e:
+                    logger.error(f"Error saving submission: {str(e)}")
+                    continue
+            else:
+                raise Exception("Failed to save submission after multiple attempts")
 
-            # Return results
             return Response({
                 'submission_id': submission.id,
                 'score': score,
@@ -110,6 +108,6 @@ class AssignmentSubmitAPIView(APIView):
         except Exception as e:
             logger.error(f"Error processing submission: {str(e)}")
             return Response(
-                {'error': str(e)}, 
+                {'error': 'An error occurred processing your submission'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

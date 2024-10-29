@@ -79,10 +79,6 @@ class AssignmentSerializer(serializers.ModelSerializer):
 
 
 class AssignmentListSerializer(serializers.ModelSerializer):
-    test_cases = TestCaseSerializer(many=True)
-    example_test_cases = ExampleTestCaseSerializer(many=True)
-    course = CourseSerializer()
-
     class Meta:
         model = Assignment
         fields = '__all__'
