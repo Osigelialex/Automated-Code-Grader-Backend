@@ -28,8 +28,8 @@ class Assignment(models.Model):
 
 class ExampleTestCase(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='example_test_cases')
-    input = models.JSONField()
-    output = models.JSONField()
+    input = models.CharField(max_length=100)
+    output = models.CharField(max_length=100)
 
     def __str__(self):
         return f'{self.assignment.title} - {self.input}'
@@ -37,8 +37,8 @@ class ExampleTestCase(models.Model):
 
 class TestCase(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='test_cases')
-    input = models.JSONField()
-    output = models.JSONField()
+    input = models.CharField(max_length=100)
+    output = models.CharField(max_length=100)
 
     def __str__(self):
         return f'{self.assignment.title} - {self.input}'
@@ -57,14 +57,3 @@ class Submission(models.Model):
 
     class Meta:
         ordering = ['-submitted_at']
-
-
-class Draft(models.Model):
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
-    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    code = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f'{self.assignment.title} - {self.student.email}'

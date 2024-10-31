@@ -25,6 +25,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Reading the .env file
 environ.Env.read_env(BASE_DIR / '.env')
 
+# Rapid API Key
+RAPIDAPI_KEY = env('X_RAPIDAPI_KEY')
+RAPIDAPI_HOST = env('X_RAPIDAPI_HOST')
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 

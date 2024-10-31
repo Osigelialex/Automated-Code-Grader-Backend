@@ -4,10 +4,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from account.permissions import IsLecturerPermission, IsStudentPermission
 from drf_spectacular.utils import extend_schema
+from .service import CodeExecutionService
 from .models import Assignment, Course, Submission
 from django.shortcuts import get_object_or_404
 from .service import CodeExecutionService
-import logging
+import logging, environ, logging
 from .serializers import (
     AssignmentSerializer,
     AssignmentListSerializer,
@@ -16,6 +17,7 @@ from .serializers import (
 )
 
 logger = logging.getLogger(__name__)
+env = environ.Env()
 
 @extend_schema(tags=['assignment'])
 class AssignmentCreateView(APIView):
@@ -60,54 +62,44 @@ class AssignmentDetailView(generics.RetrieveAPIView):
         return Assignment.objects.filter(id=self.kwargs['pk'])
 
 
-class AssignmentSubmitAPIView(APIView):
-    """API view to submit an assignment with rate limiting and validation."""
+class AssignmentSubmissionView(APIView):
+    """API view to receive and execute code submissions for an assignment."""
     serializer_class = AssignmentSubmissionSerializer
-    
-    def post(self, request, pk=None):
-        """Submit and execute code for an assignment with additional security measures."""
-        try:
-            assignment = get_object_or_404(Assignment, pk=pk)
-            serializer = self.serializer_class(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            code = request.data['code']
 
-            # Execute code
-            execution_service = CodeExecutionService()
-            results = execution_service.execute_code(
-                code=code,
-                language=assignment.programming_language,
-                test_cases=list(assignment.test_cases.all().values('input', 'output'))
-            )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.code_execution_client = CodeExecutionService()
 
-            score = (results['passed_count'] / results['total_tests']) * assignment.max_score
+    def post(self, request, pk):
+        assignment = get_object_or_404(Assignment, pk=pk)
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-            # Save submission with retry logic
-            for _ in range(3):
-                try:
-                    submission = Submission.objects.create(
-                        assignment=assignment,
-                        student=request.user,
-                        code=code,
-                        score=score,
-                        results=results
-                    )
-                    break
-                except Exception as e:
-                    logger.error(f"Error saving submission: {str(e)}")
-                    continue
-            else:
-                raise Exception("Failed to save submission after multiple attempts")
+        test_cases = assignment.test_cases.values()
+        test_cases = [{"input": tc["input"], "output": tc["output"]} for tc in test_cases]
 
-            return Response({
-                'submission_id': submission.id,
-                'score': score,
-                'results': results
-            })
+        tokens = self.code_execution_client.submit_code(serializer.validated_data['code'], test_cases)
+        submission_results = self.code_execution_client.get_submission_result(tokens)
 
-        except Exception as e:
-            logger.error(f"Error processing submission: {str(e)}")
-            return Response(
-                {'error': 'An error occurred processing your submission'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        # calculate score
+        test_case_count = len(test_cases)
+        accepted_count = 0
+        for result in submission_results["submissions"]:
+            if result["status"]["id"] == 3:
+                accepted_count += 1
+
+        score = (accepted_count / test_case_count) * assignment.max_score
+        submission_results = {
+            "score": score,
+            "results": submission_results
+        }
+
+        Submission.objects.create(
+            assignment=assignment,
+            student=request.user,
+            code=serializer.validated_data['code'],
+            score=score,
+            results=submission_results
+        )
+
+        return Response(submission_results, status=status.HTTP_200_OK)
