@@ -49,6 +49,7 @@ class Submission(models.Model):
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     code = models.TextField()
     score = models.FloatField()
+    is_best = models.BooleanField(default=True)
     results = models.JSONField()
     submitted_at = models.DateTimeField(auto_now_add=True)
 

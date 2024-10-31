@@ -22,7 +22,12 @@ class CodeExecutionService:
             url = f"{self.BASE_URL}/submissions/batch?base64_encoded=false"
             payload = {
                 "submissions": [
-                    {"source_code": source_code, "language_id": 100, "stdin": tc["input"], "expected_output": tc["output"]}
+                    {
+                        "source_code": source_code,
+                        "language_id": 100,
+                        "stdin": tc["input"],
+                        "expected_output": tc["output"]
+                    }
                     for tc in test_cases
                 ]
             }

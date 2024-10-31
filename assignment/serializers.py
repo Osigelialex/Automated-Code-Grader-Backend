@@ -1,7 +1,10 @@
 from rest_framework import serializers
 from django.utils import timezone
-from .models import Assignment, TestCase, ExampleTestCase
+from .models import Assignment, TestCase, ExampleTestCase, Submission
 from course_management.serializers import CourseSerializer
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TestCaseSerializer(serializers.ModelSerializer):
@@ -98,3 +101,9 @@ class AssignmentDetailSerializer(serializers.ModelSerializer):
 
 class AssignmentSubmissionSerializer(serializers.Serializer):
     code = serializers.CharField(required=True)
+
+
+class SubmissionDTOSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Submission
+        fields = ['id', 'code', 'score', 'is_best', 'submitted_at']
