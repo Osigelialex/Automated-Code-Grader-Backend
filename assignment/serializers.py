@@ -103,7 +103,17 @@ class AssignmentSubmissionSerializer(serializers.Serializer):
     code = serializers.CharField(required=True)
 
 
-class SubmissionDTOSerializer(serializers.ModelSerializer):
+class SubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Submission
         fields = ['id', 'code', 'score', 'is_best', 'submitted_at']
+
+
+class SubmissionDetailSerializer(serializers.ModelSerializer):
+    assignment = AssignmentSerializer()
+    student = serializers.StringRelatedField()
+
+    class Meta:
+        model = Submission
+        fields = '__all__'
+        ordering = ['-submitted_at']

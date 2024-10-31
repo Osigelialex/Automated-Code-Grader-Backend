@@ -17,7 +17,8 @@ from .serializers import (
     AssignmentListSerializer,
     AssignmentDetailSerializer,
     AssignmentSubmissionSerializer,
-    SubmissionDTOSerializer
+    SubmissionSerializer,
+    SubmissionDetailSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -70,11 +71,23 @@ class StudentSubmissionListView(APIView):
     """
     Retrieve all student submissions for an assignment
     """
-    serializer_class = SubmissionDTOSerializer
+    serializer_class = SubmissionSerializer
 
     def get(self, request, pk):
         submissions = Submission.objects.filter(student=request.user, assignment=pk)
         serializer = self.serializer_class(submissions, many=True)
+        return Response(serializer.data)
+
+
+class SubmissionDetailView(APIView):
+    """
+    Retrieve a submission by its id
+    """
+    serializer_class = SubmissionDetailSerializer
+
+    def get(self, request, pk):
+        submission = get_object_or_404(Submission, pk=pk)
+        serializer = self.serializer_class(submission)
         return Response(serializer.data)
 
 
