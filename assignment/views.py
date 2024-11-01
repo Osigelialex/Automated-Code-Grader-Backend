@@ -35,13 +35,13 @@ class AssignmentCreateView(APIView):
     def post(self, request, course_id):
         try:
             course = Course.objects.get(id=course_id)
+            data = request.data.copy()
+            serializer = self.serializer_class(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(course=course)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Course.DoesNotExist:
             return Response({'message': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
-        data = request.data.copy()
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(course=course)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(tags=['assignment'])

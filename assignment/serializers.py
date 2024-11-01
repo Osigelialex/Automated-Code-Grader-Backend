@@ -13,7 +13,7 @@ class TestCaseSerializer(serializers.ModelSerializer):
         fields = ['input', 'output']
 
     def validate_input(self, value):
-        if not isinstance(value, (list, int, str, dict, float, bool)):
+        if not isinstance(value, str):
             raise serializers.ValidationError('Invalid input data type')
         return value
 
@@ -82,6 +82,8 @@ class AssignmentSerializer(serializers.ModelSerializer):
 
 
 class AssignmentListSerializer(serializers.ModelSerializer):
+    example_test_cases = ExampleTestCaseSerializer(many=True)
+
     class Meta:
         model = Assignment
         fields = '__all__'
