@@ -146,27 +146,6 @@ class ResetPasswordSerializer(serializers.Serializer):
 
 class SendActivationTokenSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    
-    def validate_email(self, value):
-        """
-        Validates email and returns user if exists
-        """
-        try:
-            user = CustomUser.objects.get(email=value)
-            return value
-        except CustomUser.DoesNotExist:
-            raise serializers.ValidationError('No account linked to provided email')
-
-    def validate(self, attrs):
-        """
-        Returns validated data with user instance
-        """
-        user = CustomUser.objects.get(email=attrs['email'])
-        if user.is_active:
-            raise serializers.ValidationError('Account is already activated')
-
-        attrs['user'] = user
-        return attrs
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):

@@ -70,9 +70,19 @@ class SendActivationTokenView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        email_manager.send_activation_email(user)
-        return Response({ 'message': 'Please check your email to verify your account'}, status=status.HTTP_200_OK)
+        email = serializer.validated_data['email']
+
+        try:
+            user = CustomUser.objects.get(email=email)
+
+            # verify that the user's account is not activated
+            if user.is_active == True:
+                return Response({ 'message': 'Account already activated'}, status=status.HTTP_400_BAD_REQUEST)
+
+            email_manager.send_activation_email(user)
+            return Response({ 'message': 'Please check your email to verify your account'}, status=status.HTTP_200_OK)
+        except CustomUser.DoesNotExist:
+            return Response({ 'message': 'No user with that email address' }, status=status.HTTP_404_NOT_FOUND)
 
 
 class ActivateAccountView(APIView):
@@ -128,7 +138,7 @@ class ForgottenPasswordView(APIView):
             email_manager.send_password_reset_email(user)
             return Response({ 'message': f'Password reset instructions sent to {email}'}, status=status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
-            return Response({ 'message': 'No user with that email address'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({ 'message': 'No user with that email address'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class ResetPasswordView(APIView):
