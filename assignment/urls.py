@@ -3,11 +3,14 @@ from .views import (
     AssignmentDetailView,
     AssignmentSubmissionView,
     StudentSubmissionListView,
-    SubmissionDetailView)
+    SubmissionDetailView,
+    AssignmenResultData
+    )
 
 urlpatterns = [
     path('<int:pk>/', AssignmentDetailView.as_view(), name='assignment-detail'),
     path('<int:pk>/submit/', AssignmentSubmissionView.as_view(), name='assignment-submit'),
     path('<int:pk>/submissions/', StudentSubmissionListView.as_view(), name='student-submissions'),
     path('submissions/<int:pk>/', SubmissionDetailView.as_view(), name='submission-detail'),
+    path('<int:pk>/result/', AssignmenResultData.as_view(), name='assignment-result')
 ]

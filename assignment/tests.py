@@ -264,3 +264,17 @@ class AssignmentViewsTest(APITestCase):
         url = reverse('list-course-assignment', kwargs={'course_id': self.course.id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_assignment_result_data(self):
+        """Test that the lecturer can view the results from all submissions in an assignment"""
+        self.client.force_authenticate(user=self.lecturer)
+
+        url = reverse('assignment-result', kwargs={'pk': self.assignment.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(len(response.data) > 0)
+        self.assertEqual(response.data[0]['score'], 90.0)
+        self.assertEqual(response.data[0]['code'], self.submission.code)
+        self.assertEqual(response.data[0]['student']['first_name'], self.submission.student.first_name)
+        self.assertEqual(response.data[0]['student']['last_name'], self.submission.student.last_name)
+        self.assertEqual(response.data[0]['student']['department'], self.submission.student.department)

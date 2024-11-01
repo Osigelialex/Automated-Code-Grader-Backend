@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.utils import timezone
 from .models import Assignment, TestCase, ExampleTestCase, Submission
 from course_management.serializers import CourseSerializer
+from account.models import CustomUser
 import logging
 
 logger = logging.getLogger(__name__)
@@ -119,3 +120,19 @@ class SubmissionDetailSerializer(serializers.ModelSerializer):
         model = Submission
         fields = '__all__'
         ordering = ['-submitted_at']
+
+
+class StudentSerializer(serializers.ModelSerializer):
+    matric = serializers.CharField(source='student_profile.matric')
+
+    class Meta:
+        model = CustomUser
+        fields = ['first_name', 'last_name', 'department', 'matric']
+
+
+class AssignmentResultDataSerializer(serializers.ModelSerializer):
+    student = StudentSerializer()
+
+    class Meta:
+        model = Submission
+        fields = ['score', 'code', 'submitted_at', 'student']

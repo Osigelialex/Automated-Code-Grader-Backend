@@ -58,3 +58,10 @@ class Submission(models.Model):
 
     class Meta:
         ordering = ['-submitted_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['assignment', 'student'],
+                condition=models.Q(is_best=True),
+                name='unique_submission'
+            )
+        ]

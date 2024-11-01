@@ -18,7 +18,8 @@ from .serializers import (
     AssignmentDetailSerializer,
     AssignmentSubmissionSerializer,
     SubmissionSerializer,
-    SubmissionDetailSerializer
+    SubmissionDetailSerializer,
+    AssignmentResultDataSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -115,8 +116,7 @@ class AssignmentSubmissionView(APIView):
         test_cases = assignment.test_cases.values()
         test_cases = [{"input": tc["input"], "output": tc["output"]} for tc in test_cases]
 
-        # retrieve tokens needed to get the assignment submission results from
-        # the judge0 API
+        # retrieve tokens needed to get the assignment submission results from the judge0 API
         tokens = self.code_execution_client.submit_code(serializer.validated_data['code'], test_cases)
 
         # using the submission token to get the assignment submission result from judge0 API
@@ -132,8 +132,8 @@ class AssignmentSubmissionView(APIView):
         score = (accepted_count / test_case_count) * assignment.max_score
 
         # verify if the new submission is the student's best submission
-        previous_best = Submission.objects.filter(is_best=True).first()
-        is_best_submission = score > previous_best.score
+        previous_best = Submission.objects.filter(student=request.user, assignment=assignment, is_best=True).first()
+        is_best_submission = not previous_best or score > previous_best.score
         if is_best_submission:
             previous_best.is_best = False
             previous_best.save()
@@ -163,3 +163,14 @@ class AssignmentSubmissionView(APIView):
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(submission_results, status=status.HTTP_200_OK)
+
+
+class AssignmenResultData(generics.ListAPIView):
+    """
+    Retrieves the results of an assignment to the lecturer
+    """
+    permission_classes = [IsLecturerPermission]
+    serializer_class = AssignmentResultDataSerializer
+
+    def get_queryset(self):
+        return Submission.objects.filter(assignment=self.kwargs['pk'], is_best=True)
