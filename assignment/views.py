@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.core.cache import cache
 from django.utils import timezone
+from ast import literal_eval
 import time
 from .service import CodeExecutionService
 import logging, environ, logging
@@ -109,13 +110,13 @@ class AssignmentSubmissionView(APIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # check if code is already in cache
-        if cache.get(serializer.validated_data['code']):
-            return Response(cache.get(serializer.validated_data['code']), status=status.HTTP_200_OK)
-
         # verify that deadline has not been exceeded
         if assignment.deadline < timezone.now():
             return Response({ 'message': 'Deadline exceeded for this assignment' })
+
+        # check if code is already in cache
+        if cache.get(serializer.validated_data['code']):
+            return Response(literal_eval(cache.get(serializer.validated_data['code'])), status=status.HTTP_200_OK)
 
         # Extract all the test cases created for the assignment and represent them
         # in an input-output format for easy validation by the code execution service
@@ -137,18 +138,11 @@ class AssignmentSubmissionView(APIView):
 
         score = (accepted_count / test_case_count) * assignment.max_score
 
-        # verify if the new submission is the student's best submission
-        previous_best = Submission.objects.filter(student=request.user, assignment=assignment.pk, is_best=True).first()
-        is_best_submission = not previous_best or score > previous_best.score
-        if is_best_submission and previous_best is not None:
-            previous_best.is_best = False
-            previous_best.save()
-
         # include score in the response
         submission_results['score'] = score
 
         # store the submission results in cache for 5 minutes
-        cache.set(serializer.validated_data['code'], submission_results, 300)
+        cache.set(serializer.validated_data['code'], repr(submission_results), 300)
 
         # store submission in database using retry logic
         for attempt in range(self.MAX_RETRIES):
@@ -158,7 +152,6 @@ class AssignmentSubmissionView(APIView):
                         assignment=assignment,
                         student=request.user,
                         code=serializer.validated_data['code'],
-                        is_best=is_best_submission,
                         score=score,
                         results=submission_results
                     )

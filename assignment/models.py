@@ -1,6 +1,7 @@
 from django.db import models
 from course_management.models import Course
 from account.models import CustomUser
+from django.db import transaction
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 
@@ -49,7 +50,7 @@ class Submission(models.Model):
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     code = models.TextField()
     score = models.FloatField()
-    is_best = models.BooleanField(default=True)
+    is_best = models.BooleanField(default=False)
     results = models.JSONField()
     submitted_at = models.DateTimeField(auto_now_add=True)
 
@@ -58,10 +59,27 @@ class Submission(models.Model):
 
     class Meta:
         ordering = ['-submitted_at']
-        constraints = [
-            models.UniqueConstraint(
-                fields=['assignment', 'student'],
-                condition=models.Q(is_best=True),
-                name='unique_submission'
-            )
+        indexes = [
+            models.Index(fields=['assignment', 'student', 'is_best']),
+            models.Index(fields=['student', 'assignment'])
         ]
+    
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            with transaction.atomic():
+                previous_best_submission = Submission.objects.filter(
+                    assignment=self.assignment,
+                    student=self.student,
+                    is_best=True
+                ).select_for_update().first()
+
+                if not previous_best_submission or self.score >= previous_best_submission.score:
+                    Submission.objects.filter(
+                        student=self.student,
+                        assignment=self.assignment
+                    ).update(is_best=False)
+
+                    self.is_best = True
+                else:
+                    self.is_best = False
+        super().save(*args, **kwargs)

@@ -177,7 +177,7 @@ class AssignmentViewsTest(APITestCase):
         mock_code_execution_service.return_value = mock_service_instance
         
         submission_data = {
-            'code': 'def solution():\n    return "Hello"'
+            'code': self.submission.code
         }
         
         url = reverse('assignment-submit', kwargs={'pk': self.assignment.id})
@@ -203,7 +203,7 @@ class AssignmentViewsTest(APITestCase):
         self.assignment.save()
         
         submission_data = {
-            'code': 'def solution():\n    return "Hello"'
+            'code': self.submission.code
         }
         
         url = reverse('assignment-submit', kwargs={'pk': self.assignment.id})
@@ -278,3 +278,22 @@ class AssignmentViewsTest(APITestCase):
         self.assertEqual(response.data[0]['student']['first_name'], self.submission.student.first_name)
         self.assertEqual(response.data[0]['student']['last_name'], self.submission.student.last_name)
         self.assertEqual(response.data[0]['student']['department'], self.submission.student.department)
+
+    def test_best_submission(self):
+        """Test that the best submission is correctly identified"""
+        self.client.force_authenticate(user=self.student)
+
+        # Create a new submission with a higher score
+        new_submission = Submission.objects.create(
+            assignment=self.assignment,
+            student=self.student,
+            code='def solution(): return "Hello"',
+            score=95.0,
+            results={'submissions': [{'status': {'id': 3}}]}
+        )
+
+        # Check that the previous submission is no longer the best
+        self.assertFalse(Submission.objects.get(pk=self.submission.id).is_best)
+
+        # Check that the new submission is the best
+        self.assertTrue(Submission.objects.get(pk=new_submission.id).is_best)
