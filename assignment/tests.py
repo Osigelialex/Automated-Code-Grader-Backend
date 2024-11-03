@@ -218,7 +218,7 @@ class AssignmentViewsTest(APITestCase):
         
         url = reverse('student-submissions', kwargs={'pk': self.assignment.id})
         response = self.client.get(url)
-        
+    
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(len(response.data) > 0)
         self.assertEqual(response.data[0]['score'], 90.0)

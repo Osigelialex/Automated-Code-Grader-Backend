@@ -1,5 +1,5 @@
 from django.conf import settings
-import logging, requests
+import logging, requests, base64
 from typing import List, Dict
 
 logger = logging.getLogger(__name__)
@@ -18,15 +18,14 @@ class CodeExecutionService:
     def submit_code(self, source_code: str, test_cases: List[Dict[str, any]]) -> dict:
         """Perform batch submission to Judge0"""
         try:
-            # not using base64 encoding for now because of unhashable data types
-            url = f"{self.BASE_URL}/submissions/batch?base64_encoded=false"
+            url = f"{self.BASE_URL}/submissions/batch?base64_encoded=true"
             payload = {
                 "submissions": [
                     {
-                        "source_code": source_code,
+                        "source_code": base64.b64encode(source_code.encode()).decode(),
                         "language_id": 100,
-                        "stdin": tc["input"],
-                        "expected_output": tc["output"]
+                        "stdin": base64.b64encode(tc["input"].encode()).decode(),
+                        "expected_output": base64.b64encode(tc["output"].encode()).decode()
                     }
                     for tc in test_cases
                 ]
