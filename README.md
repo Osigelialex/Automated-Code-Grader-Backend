@@ -71,13 +71,9 @@ python manage.py runserver
 ```
 
 3. **Frontend setup**
-```bash
-cd frontend
-npm install
-npm run dev
-```
+Visit the frontend repository here 
 
-3. **Environment Variables**
+4. **Environment Variables**
 ```bash
 SECRET_KEY=your-django-secret-key
 DEBUG=True
@@ -96,5 +92,5 @@ X_RAPIDAPI_KEY=Your judge0 rapid API key
 X_RAPIDAPI_HOST=your judge0 rapid API host
 ```
 
-4. **API documentation**
+5. **API documentation**
 To visit the API documentation, go to http://localhost:8000
