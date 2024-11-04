@@ -30,7 +30,17 @@ env = environ.Env()
 @extend_schema(tags=['assignment'])
 class AssignmentCreateView(APIView):
     """
-    API view to create an assignment
+    API endpoint for creating an assignment for a course
+
+    This view allows lecturers to create assignments for a course
+
+    Attributes:
+        permission_classes: list of permission classes that the view requires
+        serializer_class: the serializer class to use for serializing the queryset
+    Returns:
+        201 CREATED: If the assignment was created successfully
+        400 BAD REQUEST: If the request data is invalid
+        404 NOT FOUND: If the course does not exist
     """
     serializer_class = AssignmentSerializer
     permission_classes = [IsLecturerPermission]
@@ -50,7 +60,17 @@ class AssignmentCreateView(APIView):
 @extend_schema(tags=['assignment'])
 class StudentAssignmentListView(generics.ListAPIView):
     """
-    Endpoint to list assignments in a course
+    API endpoint for retrieving all assignments for a course by a student
+
+    This view allows students to view all the assignments for a course
+
+    Attributes:
+        permission_classes: list of permission classes that the view requires
+        serializer_class: the serializer class to use for serializing the queryset
+    Returns:
+        200 OK: List of assignments for the course
+        400 BAD REQUEST: If the request data is invalid
+        404 NOT FOUND: If the course does not exist
     """
     serializer_class = AssignmentListSerializer
     permission_classes = [IsStudentPermission]
@@ -61,7 +81,16 @@ class StudentAssignmentListView(generics.ListAPIView):
 
 class AssignmentDetailView(generics.RetrieveAPIView):
     """
-    Endpoint to retrieve an assignment by its id
+    API endpoint for retrieving an assignment by its id
+
+    This view allows users to view the details of an assignment
+    Attributes:
+        permission_classes: list of permission classes that the view requires
+        serializer_class: the serializer class to use for serializing the queryset
+    Returns:
+        200 OK: The assignment details
+        404 NOT FOUND: If the assignment does not exist
+        400 BAD REQUEST: If the request data is invalid
     """
     serializer_class = AssignmentDetailSerializer
     permission_classes = [IsAuthenticated]
@@ -72,9 +101,20 @@ class AssignmentDetailView(generics.RetrieveAPIView):
 
 class StudentSubmissionListView(APIView):
     """
-    Retrieve all student submissions for an assignment
+    API endpoint for retrieving all submissions for an assignment by a student
+
+    This view allows students to view all the past submissions they have made for an assignment
+    to enable them to track their progress and improve on their submissions
+
+    Attributes:
+        permission_classes: list of permission classes that the view requires
+        serializer_class: the serializer class to use for serializing the queryset
+    Returns:
+        200 OK: List of submissions for the assignment
+        400 BAD REQUEST: If the request data is invalid
     """
     serializer_class = SubmissionSerializer
+    permission_classes = [IsStudentPermission]
 
     def get(self, request, pk):
         submissions = Submission.objects.filter(student=request.user, assignment=pk)
@@ -84,7 +124,17 @@ class StudentSubmissionListView(APIView):
 
 class SubmissionDetailView(APIView):
     """
-    Retrieve a submission by its id
+    API endpoint for retrieving a submission by its id
+
+    This view allows users to view the details of a submission made for an assignment
+
+    Attributes:
+        permission_classes: list of permission classes that the view requires
+        serializer_class: the serializer class to use for serializing the queryset
+    Returns:
+        200 OK: The submission details
+        404 NOT FOUND: If the submission does not exist
+        400 BAD REQUEST: If the request data is invalid
     """
     serializer_class = SubmissionDetailSerializer
 
@@ -95,7 +145,21 @@ class SubmissionDetailView(APIView):
 
 
 class AssignmentSubmissionView(APIView):
-    """API view to receive and execute code submissions for an assignment."""
+    """
+    API endpoint for making a code submission for an assignment
+
+    This view handles the submission of code for an assignment by a student.
+    It calls the code execution service to run the code against the test cases
+
+    Attributes:
+        permission_classes: list of permission classes that the view requires
+        serializer_class: the serializer class to use for serializing the queryset
+        MAX_RETRIES: the maximum number of retries to save the submission to the database
+    Returns:
+        200 OK: The submission results
+        400 BAD REQUEST: If the request data is invalid
+        500 INTERNAL SERVER ERROR: If there was an issue saving the submission to the database
+    """
     serializer_class = AssignmentSubmissionSerializer
     permission_classes = [IsStudentPermission]
     MAX_RETRIES = 3
@@ -110,7 +174,6 @@ class AssignmentSubmissionView(APIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # verify that deadline has not been exceeded
         if assignment.deadline < timezone.now():
             return Response({ 'message': 'Deadline exceeded for this assignment' })
 
@@ -169,7 +232,17 @@ class AssignmentSubmissionView(APIView):
 
 class AssignmenResultData(generics.ListAPIView):
     """
-    Retrieves the results of an assignment to the lecturer
+    API endpoint for retrieving aggregated assignment submissions for lecturers
+
+    This view returns the best assignment submissions for each student who attempted the assignment
+    this is useful for analysis and recording of assignment results
+
+    Attributes:
+        permission_classes: list of permission classes that the view requires
+        serializer_class: the serializer class to use for serializing the queryset
+    Returns:
+        200 OK: List of best submissions for the assignment
+        400 BAD REQUEST: If the request data is invalid
     """
     permission_classes = [IsLecturerPermission]
     serializer_class = AssignmentResultDataSerializer
