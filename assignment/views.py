@@ -162,7 +162,6 @@ class AssignmentSubmissionView(APIView):
     """
     serializer_class = AssignmentSubmissionSerializer
     permission_classes = [IsStudentPermission]
-    MAX_RETRIES = 3
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -207,25 +206,14 @@ class AssignmentSubmissionView(APIView):
         # store the submission results in cache for 5 minutes
         cache.set(serializer.validated_data['code'], repr(submission_results), 300)
 
-        # store submission in database using retry logic
-        for attempt in range(self.MAX_RETRIES):
-            try:
-                with transaction.atomic():
-                    Submission.objects.create(
-                        assignment=assignment,
-                        student=request.user,
-                        code=serializer.validated_data['code'],
-                        score=score,
-                        results=submission_results
-                    )
-                break
-            except Exception as e:
-                logger.error(f"Attempt {attempt + 1} failed to save submission")
-                if attempt < self.MAX_RETRIES - 1:
-                    time.sleep(2 ** attempt)
-                else:
-                    return Response({ 'message': 'There was an issue saving your submission to the database, try again'},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # store submission in database
+        Submission.objects.create(
+            assignment=assignment,
+            student=request.user,
+            code=serializer.validated_data['code'],
+            score=score,
+            results=submission_results
+        )
 
         return Response(submission_results, status=status.HTTP_200_OK)
 
