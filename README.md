@@ -4,24 +4,24 @@ Codegradr is an automated grading system for programming assignments that combin
 
 ## Features
 
-- **Automated Grading**
-  - Test-case-based evaluation for objective assessment
-  - LLM integration for personalized feedback on code quality, style, and improvements
-  - Batch processing of submissions
+**Automated Grading**
+- Test-case-based evaluation for objective assessment
+- LLM integration for personalized feedback on code quality, style, and improvements
+- Batch processing of submissions
   
-- **Course Management**
-  - Course creation and enrollment management
-  - Assignment creation with customizable test cases
-  - Deadline management and late submission handling
+**Course Management**
+- Course creation and enrollment management
+- Assignment creation with customizable test cases
+- Deadline management and late submission handling
   
-- **Assignment Management**
-  - Student submission interface with code editor
-  - Submission history and version control
+**Assignment Management**
+- Student submission interface with code editor
+- Submission history and version control
   
-- **User Management**
-  - Role-based access control (Student/Lecturer)
-  - Authentication and authorization
-  - User profiles and progress tracking
+**User Management**
+- Role-based access control (Student/Lecturer)
+- Authentication and authorization
+- User profiles and progress tracking
 
 ## Technology Stack
 
