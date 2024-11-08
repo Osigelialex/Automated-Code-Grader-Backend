@@ -1,6 +1,21 @@
 from rest_framework import serializers
 from .models import Course
 import re
+from account.models import CustomUser
+
+
+class LecturerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['first_name', 'last_name', 'email', 'department']
+
+
+class CourseListSerializer(serializers.ModelSerializer):
+    lecturer = LecturerSerializer()
+
+    class Meta:
+        model = Course
+        fields = ['id', 'title', 'description', 'course_code', 'course_units', 'lecturer', 'course_join_code']
 
 
 class CourseSerializer(serializers.ModelSerializer):

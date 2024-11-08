@@ -43,7 +43,15 @@ class CodeExecutionService:
             querystring = {"tokens": ",".join([t["token"] for t in tokens])}
             url = f"{self.BASE_URL}/submissions/batch"
             response = requests.get(url, headers=self.headers, params=querystring)
-            return response.json()            
+            result = response.json()
+            cleaned_submissions = []
+            for submission in result.get("submissions", []):
+                cleaned_submissions.append({
+                    "output": submission.get("stdout", ""),
+                    "time": f"{submission.get('time', '0')}s",
+                    "status": submission.get("status", {}).get("description", "Unknown")
+                })
+            return {"submissions": cleaned_submissions}
         except requests.exceptions.RequestException as e:
             logger.error(f"Error getting submission result: {str(e)}")
             raise

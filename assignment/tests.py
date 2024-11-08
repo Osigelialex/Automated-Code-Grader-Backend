@@ -171,7 +171,7 @@ class AssignmentViewsTest(APITestCase):
         mock_service_instance.submit_code.return_value = ['token1']
         mock_service_instance.get_submission_result.return_value = {
             'submissions': [
-                {'status': {'id': 3}}
+                {'status': 'Accepted'}
             ]
         }
         mock_code_execution_service.return_value = mock_service_instance

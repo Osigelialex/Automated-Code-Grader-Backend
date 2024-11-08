@@ -2,7 +2,7 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from account.permissions import IsLecturerPermission, IsStudentPermission
-from .serializers import CourseSerializer, JoinCourseSerializer, MessageSerializer
+from .serializers import CourseSerializer, JoinCourseSerializer, MessageSerializer, CourseListSerializer
 from .models import Course
 from drf_spectacular.utils import extend_schema
 
@@ -64,7 +64,7 @@ class StudentCourseListView(generics.ListAPIView):
     View to list courses a student is enrolled in
     """
     permission_classes = [IsStudentPermission]
-    serializer_class = CourseSerializer
+    serializer_class = CourseListSerializer
 
     def get_queryset(self):
         return Course.objects.filter(students=self.request.user)

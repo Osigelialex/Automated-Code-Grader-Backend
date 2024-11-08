@@ -195,7 +195,7 @@ class AssignmentSubmissionView(APIView):
         test_case_count = len(test_cases)
         accepted_count = 0
         for result in submission_results["submissions"]:
-            if result["status"]["id"] == 3:
+            if result["status"] == "Accepted":
                 accepted_count += 1
 
         score = (accepted_count / test_case_count) * assignment.max_score
