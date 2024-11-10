@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.utils import timezone
-from .models import Assignment, TestCase, ExampleTestCase, Submission
+from .models import Assignment, TestCase, ExampleTestCase, Submission, Feedback
 from course_management.serializers import CourseSerializer
 from account.models import CustomUser
 import logging

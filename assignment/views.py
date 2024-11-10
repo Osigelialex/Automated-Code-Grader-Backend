@@ -5,13 +5,13 @@ from rest_framework import generics, status
 from account.permissions import IsLecturerPermission, IsStudentPermission
 from drf_spectacular.utils import extend_schema
 from .service import CodeExecutionService
-from .models import Assignment, Course, Submission
+from .models import Assignment, Course, Submission, Feedback
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.core.cache import cache
 from django.utils import timezone
 from ast import literal_eval
-import time
+import google.generativeai as genai
 from .service import CodeExecutionService
 import logging, environ, logging
 from .serializers import (
@@ -237,3 +237,57 @@ class AssignmenResultData(generics.ListAPIView):
 
     def get_queryset(self):
         return Submission.objects.filter(assignment=self.kwargs['pk'], is_best=True)
+
+
+class FeedbackGenerationView(APIView):
+    """
+    API endpoint for generating personalized feedback for a students submission
+
+    This view takes in the submission results and generates personalized feedback for the student
+    based on the test cases that were passed and failed
+
+    Attributes:
+        permission_classes: list of permission classes that the view requires
+    Returns:
+        200 OK: The feedback for the submission
+        400 BAD REQUEST: If the request data is invalid
+    """
+    permission_classes = [IsStudentPermission]
+
+    def post(self, request, submission_id):
+        genai.configure(api_key=env('GEMINI_API_KEY'))
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        student_name = request.user.first_name
+        submission = get_object_or_404(Submission, pk=submission_id)
+        assignment = submission.assignment
+        prompt = f"""
+            Role: You are a programming coach providing feedback on student code.
+    
+            Assignment: {assignment.description}
+            Programming Language: {assignment.programming_language}
+            Student Code: {submission.code}
+            Student Name: {student_name}
+
+            Provide feedback addressing:
+                1. Code correctness
+                2. Code style and best practices
+                3. Specific improvement suggestions
+                4. Positive reinforcement for good practices
+    
+            Format feedback in a constructive, encouraging manner.
+            Limit feedback to 20 words.
+            Note: Do not give out the answers but rather guide the student
+        """
+        try:
+            response = model.generate_content(prompt)
+        except Exception as e:
+            return Response({ 'error': 'CodeBuddy is unavailable right now' })
+
+        # store response in database
+        feedback = Feedback(
+            submission=submission,
+            content=response.text,
+        )
+
+        feedback.save()
+        return Response({ 'feedback': response.text }, status=status.HTTP_200_OK)

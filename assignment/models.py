@@ -83,3 +83,12 @@ class Submission(models.Model):
                 else:
                     self.is_best = False
         super().save(*args, **kwargs)
+
+
+class Feedback(models.Model):
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
+    content = models.TextField()
+    generated_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-generated_at']

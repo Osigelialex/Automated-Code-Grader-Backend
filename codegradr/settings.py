@@ -29,6 +29,9 @@ environ.Env.read_env(BASE_DIR / '.env')
 RAPIDAPI_KEY = env('X_RAPIDAPI_KEY')
 RAPIDAPI_HOST = env('X_RAPIDAPI_HOST')
 
+# Gemini API key
+GEMINI_API_KEY = env('GEMINI_API_KEY')
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
