@@ -162,6 +162,7 @@ class AssignmentSubmissionView(APIView):
     """
     serializer_class = AssignmentSubmissionSerializer
     permission_classes = [IsStudentPermission]
+    throttle_scope = 'submission'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -253,16 +254,20 @@ class FeedbackGenerationView(APIView):
         400 BAD REQUEST: If the request data is invalid
     """
     permission_classes = [IsStudentPermission]
+    throttle_scope = 'feedback'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        genai.configure(api_key=env('GEMINI_API_KEY'))
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     def post(self, request, submission_id):
-        genai.configure(api_key=env('GEMINI_API_KEY'))
-        model = genai.GenerativeModel("gemini-1.5-flash")
         student_name = request.user.first_name
         submission = get_object_or_404(Submission, pk=submission_id)
         assignment = submission.assignment
         prompt = f"""
             Role: You are a programming coach providing feedback on student code.
-    
+
             Assignment: {assignment.description}
             Programming Language: {assignment.programming_language}
             Student Code: {submission.code}
@@ -279,7 +284,7 @@ class FeedbackGenerationView(APIView):
             Note: Do not give out the answers but rather guide the student
         """
         try:
-            response = model.generate_content(prompt)
+            response = self.model.generate_content(prompt)
         except Exception as e:
             return Response({ 'error': 'CodeBuddy is unavailable right now' })
 
