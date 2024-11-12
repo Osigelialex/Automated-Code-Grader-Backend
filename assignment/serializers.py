@@ -149,3 +149,13 @@ class FeedbackRatingSerializer(serializers.ModelSerializer):
         if value < 1 or value > 5:
             raise serializers.ValidationError('Rating must be between 1 and 5')
         return value
+
+
+class FeedbackListSerializer(serializers.ModelSerializer):
+    code = serializers.CharField(source='submission.code')
+    score = serializers.CharField(source='submission.score')
+
+    class Meta:
+        model = Feedback
+        fields = ['content', 'rating', 'code', 'score']
+        ordering = ['-created_at']

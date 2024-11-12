@@ -22,7 +22,8 @@ from .serializers import (
     SubmissionSerializer,
     SubmissionDetailSerializer,
     AssignmentResultDataSerializer,
-    FeedbackRatingSerializer
+    FeedbackRatingSerializer,
+    FeedbackListSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -318,3 +319,20 @@ class RateFeedbackView(APIView):
         feedback.rating = serializer.validated_data['rating']
         feedback.save()
         return Response({ 'message': 'Thank you! Feedback rated successfully' }, status=status.HTTP_200_OK)
+
+
+class FeedbackListView(generics.ListAPIView):
+    """
+    API endpoint for retrieving all feedbacks
+
+    This view lists all the feedbacks for analysis purposes
+
+    Attributes:
+        permission_classes: list of permission classes that the view requires
+        serializer_class: the serializer class to use for serializing the queryset
+    Returns:
+        200 OK: List of feedback for the submission
+        400 BAD REQUEST: If the request data is invalid
+    """
+    serializer_class = FeedbackListSerializer
+    queryset = Feedback.objects.all()
