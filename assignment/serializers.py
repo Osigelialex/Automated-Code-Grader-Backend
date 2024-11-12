@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.utils import timezone
-from .models import Assignment, TestCase, ExampleTestCase, Submission, Feedback
+from .models import Feedback, Assignment, TestCase, ExampleTestCase, Submission, Feedback
 from course_management.serializers import CourseSerializer
 from account.models import CustomUser
 import logging
@@ -136,3 +136,16 @@ class AssignmentResultDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = Submission
         fields = ['score', 'code', 'submitted_at', 'student']
+
+
+class FeedbackRatingSerializer(serializers.ModelSerializer):
+    rating = serializers.IntegerField(min_value=1, max_value=5)
+
+    class Meta:
+        model = Feedback
+        fields = ['rating']
+
+    def validate_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError('Rating must be between 1 and 5')
+        return value

@@ -21,7 +21,8 @@ from .serializers import (
     AssignmentSubmissionSerializer,
     SubmissionSerializer,
     SubmissionDetailSerializer,
-    AssignmentResultDataSerializer
+    AssignmentResultDataSerializer,
+    FeedbackRatingSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -94,9 +95,8 @@ class AssignmentDetailView(generics.RetrieveAPIView):
     """
     serializer_class = AssignmentDetailSerializer
     permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return Assignment.objects.filter(id=self.kwargs['pk'])
+    queryset = Assignment.objects.all()
+    lookup_field = 'pk'
 
 
 class StudentSubmissionListView(APIView):
@@ -122,7 +122,7 @@ class StudentSubmissionListView(APIView):
         return Response(serializer.data)
 
 
-class SubmissionDetailView(APIView):
+class SubmissionDetailView(generics.RetrieveAPIView):
     """
     API endpoint for retrieving a submission by its id
 
@@ -137,11 +137,8 @@ class SubmissionDetailView(APIView):
         400 BAD REQUEST: If the request data is invalid
     """
     serializer_class = SubmissionDetailSerializer
-
-    def get(self, request, pk):
-        submission = get_object_or_404(Submission, pk=pk)
-        serializer = self.serializer_class(submission)
-        return Response(serializer.data)
+    queryset = Submission.objects.all()
+    lookup_field = 'pk'
 
 
 class AssignmentSubmissionView(APIView):
@@ -219,7 +216,7 @@ class AssignmentSubmissionView(APIView):
         return Response(submission_results, status=status.HTTP_200_OK)
 
 
-class AssignmenResultData(generics.ListAPIView):
+class AssignmentResultData(generics.ListAPIView):
     """
     API endpoint for retrieving aggregated assignment submissions for lecturers
 
@@ -296,3 +293,28 @@ class FeedbackGenerationView(APIView):
 
         feedback.save()
         return Response({ 'feedback': response.text }, status=status.HTTP_200_OK)
+
+
+class RateFeedbackView(APIView):
+    """
+    API endpoint for rating feedback generated for a students submission
+
+    This view allows students to rate the feedback generated for their submission
+    to enable the system to improve the quality of feedback generated
+
+    Attributes:
+        permission_classes: list of permission classes that the view requires
+    Returns:
+        200 OK: The feedback rating
+        400 BAD REQUEST: If the request data is invalid
+    """
+    permission_classes = [IsStudentPermission]
+    serializer_class = FeedbackRatingSerializer
+
+    def post(self, request, feedback_id):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        feedback = get_object_or_404(Feedback, pk=feedback_id)
+        feedback.rating = serializer.validated_data['rating']
+        feedback.save()
+        return Response({ 'message': 'Thank you! Feedback rated successfully' }, status=status.HTTP_200_OK)
