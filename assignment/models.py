@@ -3,6 +3,7 @@ from course_management.models import Course
 from account.models import CustomUser
 from django.db import transaction
 from django.core.validators import MaxValueValidator, MinValueValidator
+import uuid
 
 
 class Assignment(models.Model):
@@ -11,6 +12,7 @@ class Assignment(models.Model):
         JAVA = 'Java'
         CPP = 'C++'
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=100)
     description = models.TextField()
     deadline = models.DateTimeField()
@@ -28,6 +30,7 @@ class Assignment(models.Model):
 
 
 class ExampleTestCase(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='example_test_cases')
     input = models.CharField(max_length=100)
     output = models.CharField(max_length=100)
@@ -37,6 +40,7 @@ class ExampleTestCase(models.Model):
 
 
 class TestCase(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='test_cases')
     input = models.CharField(max_length=100)
     output = models.CharField(max_length=100)
@@ -46,6 +50,7 @@ class TestCase(models.Model):
 
 
 class Submission(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     code = models.TextField()
@@ -86,6 +91,7 @@ class Submission(models.Model):
 
 
 class Feedback(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
     content = models.TextField()
     rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], null=True)

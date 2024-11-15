@@ -11,12 +11,12 @@ from .views import (
     )
 
 urlpatterns = [
-    path('assignment/<int:pk>/', AssignmentDetailView.as_view(), name='assignment-detail'),
-    path('assignment/<int:pk>/submit/', AssignmentSubmissionView.as_view(), name='assignment-submit'),
-    path('assignment/<int:pk>/submissions/', StudentSubmissionListView.as_view(), name='student-submissions'),
-    path('submission/<int:pk>/', SubmissionDetailView.as_view(), name='submission-detail'),
-    path('assignment/<int:pk>/results/', AssignmentResultData.as_view(), name='assignment-result'),
-    path('submission/<int:submission_id>/feedback/', FeedbackGenerationView.as_view(), name='generate-feedback'),
-    path('feedback/<int:feedback_id>/rate/', RateFeedbackView.as_view(), name='rate-feedback'),
+    path('assignment/<str:pk>/', AssignmentDetailView.as_view(), name='assignment-detail'),
+    path('assignment/<str:pk>/submit/', AssignmentSubmissionView.as_view(), name='assignment-submit'),
+    path('assignment/<str:pk>/submissions/', StudentSubmissionListView.as_view(), name='student-submissions'),
+    path('submission/<str:pk>/', SubmissionDetailView.as_view(), name='submission-detail'),
+    path('assignment/<str:pk>/results/', AssignmentResultData.as_view(), name='assignment-result'),
+    path('submission/<str:submission_id>/feedback/', FeedbackGenerationView.as_view(), name='generate-feedback'),
+    path('feedback/<str:feedback_id>/rate/', RateFeedbackView.as_view(), name='rate-feedback'),
     path('feedback/', FeedbackListView.as_view(), name='feedback-list')
 ]

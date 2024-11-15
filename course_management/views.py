@@ -19,9 +19,9 @@ class CourseListCreateView(generics.ListCreateAPIView):
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
-        data['lecturer'] = request.user.id
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
+        serializer.validated_data['lecturer'] = request.user
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils import timezone
+import uuid
 
 
 class CustomUserManager(BaseUserManager):
@@ -33,6 +34,7 @@ class CustomUser(AbstractUser):
         LECTURER = 'LECTURER', 'Lecturer'
 
     username = None
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -53,6 +55,7 @@ class Student(models.Model):
         (400, '400'),
     ]
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='student_profile')
     matric = models.CharField(max_length=10, unique=True)
     level = models.IntegerField(choices=LEVEL_CHOICES, default=100)
@@ -62,6 +65,7 @@ class Student(models.Model):
 
 
 class Lecturer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='lecturer_profile')
     staff_id = models.CharField(max_length=10, unique=True)
 
