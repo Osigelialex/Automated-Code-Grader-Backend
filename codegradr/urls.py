@@ -8,7 +8,7 @@ from drf_spectacular.views import (
 
 api_v1_patterns = [
     path('account/', include('account.urls')),
-    path('course/', include('course_management.urls')),
+    path('', include('course_management.urls')),
     path('', include('assignment.urls')),
 ]
 

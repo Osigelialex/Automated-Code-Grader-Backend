@@ -83,8 +83,8 @@ class UnenrollView(APIView):
                 400: MessageSerializer
             }
     )
-    def delete(self, request, course_id):
-        course = Course.objects.filter(id=course_id).first()
+    def delete(self, request, pk):
+        course = Course.objects.filter(id=pk).first()
         if not course:
             return Response({ 'message': 'Course not found' }, status=status.HTTP_404_NOT_FOUND)
         

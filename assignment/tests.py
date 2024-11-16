@@ -42,7 +42,8 @@ class AssignmentViewsTest(APITestCase):
             description='Test description',
             deadline=timezone.now() + timezone.timedelta(days=7),
             max_score=100,
-            programming_language=Assignment.ProgrammingLanguage.PYTHON
+            programming_language=Assignment.ProgrammingLanguage.PYTHON,
+            is_draft=False
         )
 
         # Create example test cases
@@ -66,7 +67,7 @@ class AssignmentViewsTest(APITestCase):
             code='def solution(): return "Hello"',
             score=90.0,
             is_best=True,
-            results={'submissions': [{'status': {'id': 3}}]}
+            results={'submissions': [{'status': 'Accepted'}]}
         )
 
     def test_lecturer_can_create_assignment(self):
@@ -105,7 +106,7 @@ class AssignmentViewsTest(APITestCase):
             ]
         }
         
-        url = reverse('create-assignment', kwargs={'course_id': self.course.id})
+        url = reverse('create-assignment', kwargs={'pk': self.course.id})
         response = self.client.post(url, assignment_data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -131,16 +132,26 @@ class AssignmentViewsTest(APITestCase):
             'test_cases': [{'input': 'test', 'output': 'expected'}]
         }
         
-        url = reverse('create-assignment', kwargs={'course_id': self.course.id})
+        url = reverse('create-assignment', kwargs={'pk': self.course.id})
         response = self.client.post(url, assignment_data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_lecturer_can_publish_assignment(self):
+        """Test that a lecturer can publish an assignment."""
+        self.assignment.is_draft = True
+        self.client.force_authenticate(user=self.lecturer)
+        
+        url = reverse('publish-assignment', kwargs={'pk': self.assignment.id})
+        response = self.client.patch(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_student_can_list_assignments(self):
         """Test that a student can list assignments for a course."""
         self.client.force_authenticate(user=self.student)
         
-        url = reverse('list-course-assignment', kwargs={'course_id': self.course.id})
+        url = reverse('list-course-assignment', kwargs={'pk': self.course.id})
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -248,7 +259,7 @@ class AssignmentViewsTest(APITestCase):
             'programming_language': Assignment.ProgrammingLanguage.PYTHON
         }
         
-        url = reverse('create-assignment', kwargs={'course_id': self.course.id})
+        url = reverse('create-assignment', kwargs={'pk': self.course.id})
         response = self.client.post(url, assignment_data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -256,12 +267,12 @@ class AssignmentViewsTest(APITestCase):
     def test_unauthenticated_access(self):
         """Test that unauthenticated users cannot access protected endpoints."""
         # Test assignment creation
-        url = reverse('create-assignment', kwargs={'course_id': self.course.id})
+        url = reverse('create-assignment', kwargs={'pk': self.course.id})
         response = self.client.post(url, {}, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         
         # Test assignment list
-        url = reverse('list-course-assignment', kwargs={'course_id': self.course.id})
+        url = reverse('list-course-assignment', kwargs={'pk': self.course.id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -289,7 +300,7 @@ class AssignmentViewsTest(APITestCase):
             student=self.student,
             code='def solution(): return "Hello"',
             score=95.0,
-            results={'submissions': [{'status': {'id': 3}}]}
+            results={'submissions': [{'status': 'Accepted'}]}
         )
 
         # Check that the previous submission is no longer the best

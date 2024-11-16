@@ -29,7 +29,7 @@ from .serializers import (
 logger = logging.getLogger(__name__)
 env = environ.Env()
 
-@extend_schema(tags=['assignment'])
+@extend_schema(tags=['assignments'])
 class AssignmentCreateView(APIView):
     """
     API endpoint for creating an assignment for a course
@@ -47,9 +47,9 @@ class AssignmentCreateView(APIView):
     serializer_class = AssignmentSerializer
     permission_classes = [IsLecturerPermission]
 
-    def post(self, request, course_id):
+    def post(self, request, pk):
         try:
-            course = Course.objects.get(id=course_id)
+            course = Course.objects.get(id=pk)
             data = request.data.copy()
             serializer = self.serializer_class(data=data)
             serializer.is_valid(raise_exception=True)
@@ -59,7 +59,28 @@ class AssignmentCreateView(APIView):
             return Response({'message': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
-@extend_schema(tags=['assignment'])
+class PublishAssignmentView(APIView):
+    """
+    API endpoint for publishing an assignment
+
+    This view allows lecturers to publish an assignment to make it available to students
+
+    Attributes:
+        permission_classes: list of permission classes that the view requires
+    Returns:
+        200 OK: If the assignment was published successfully
+        404 NOT FOUND: If the assignment does not exist
+    """
+    permission_classes = [IsLecturerPermission]
+
+    def patch(self, request, pk):
+        assignment = get_object_or_404(Assignment, pk=pk)
+        assignment.is_draft = False
+        assignment.save()
+        return Response({ 'message': 'Assignment published successfully' }, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=['assignments'])
 class StudentAssignmentListView(generics.ListAPIView):
     """
     API endpoint for retrieving all assignments for a course by a student
@@ -78,7 +99,7 @@ class StudentAssignmentListView(generics.ListAPIView):
     permission_classes = [IsStudentPermission]
 
     def get_queryset(self):
-        return Assignment.objects.filter(course=self.kwargs['course_id'])
+        return Assignment.objects.filter(course=self.kwargs['pk'], is_draft=False)
 
 
 class AssignmentDetailView(generics.RetrieveAPIView):

@@ -88,7 +88,7 @@ class AssignmentListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assignment
         fields = ['id', 'title', 'description', 'deadline',
-                  'max_score', 'programming_language',
+                  'max_score', 'programming_language', 'is_draft',
                   'example_test_cases', 'created_at', 'updated_at']
         ordering = ['-created_at']
 

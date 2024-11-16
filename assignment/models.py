@@ -21,6 +21,7 @@ class Assignment(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     max_score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(100)])
     programming_language = models.CharField(choices=ProgrammingLanguage.choices, max_length=10)
+    is_draft = models.BooleanField(default=True)
 
     def __str__(self):
         return self.title
@@ -70,23 +71,22 @@ class Submission(models.Model):
         ]
     
     def save(self, *args, **kwargs):
-        if not self.pk:
-            with transaction.atomic():
-                previous_best_submission = Submission.objects.filter(
-                    assignment=self.assignment,
+        with transaction.atomic():
+            previous_best_submission = Submission.objects.filter(
+                assignment=self.assignment,
+                student=self.student,
+                is_best=True
+            ).select_for_update().first()
+
+            if not previous_best_submission or self.score >= previous_best_submission.score:
+                Submission.objects.filter(
                     student=self.student,
-                    is_best=True
-                ).select_for_update().first()
+                    assignment=self.assignment
+                ).update(is_best=False)
 
-                if not previous_best_submission or self.score >= previous_best_submission.score:
-                    Submission.objects.filter(
-                        student=self.student,
-                        assignment=self.assignment
-                    ).update(is_best=False)
-
-                    self.is_best = True
-                else:
-                    self.is_best = False
+                self.is_best = True
+            else:
+                self.is_best = False
         super().save(*args, **kwargs)
 
 
