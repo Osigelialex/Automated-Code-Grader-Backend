@@ -2,14 +2,16 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
+from django_filters import rest_framework as filters
 from account.permissions import IsLecturerPermission, IsStudentPermission
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from .service import CodeExecutionService
 from .models import Assignment, Course, Submission, Feedback
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.core.cache import cache
 from django.utils import timezone
+from .filters import AssignmentFilter
 from ast import literal_eval
 import google.generativeai as genai
 from .service import CodeExecutionService
@@ -80,12 +82,17 @@ class PublishAssignmentView(APIView):
         return Response({ 'message': 'Assignment published successfully' }, status=status.HTTP_200_OK)
 
 
-@extend_schema(tags=['assignments'])
-class StudentAssignmentListView(generics.ListAPIView):
+@extend_schema(
+    tags=['assignments'],
+    parameters=[
+        OpenApiParameter(name='is_draft', description='Filter assignments by draft status', required=False, type=bool)
+    ]
+)
+class AssignmentListView(generics.ListAPIView):
     """
-    API endpoint for retrieving all assignments for a course by a student
+    API endpoint for retrieving all assignments for a course
 
-    This view allows students to view all the assignments for a course
+    This view allows users to view all the assignments for a course
 
     Attributes:
         permission_classes: list of permission classes that the view requires
@@ -96,10 +103,12 @@ class StudentAssignmentListView(generics.ListAPIView):
         404 NOT FOUND: If the course does not exist
     """
     serializer_class = AssignmentListSerializer
-    permission_classes = [IsStudentPermission]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = AssignmentFilter
 
     def get_queryset(self):
-        return Assignment.objects.filter(course=self.kwargs['pk'], is_draft=False)
+        return Assignment.objects.filter(course=self.kwargs['pk'])
 
 
 class AssignmentDetailView(generics.RetrieveAPIView):
