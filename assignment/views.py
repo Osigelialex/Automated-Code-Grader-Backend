@@ -280,9 +280,9 @@ class FeedbackGenerationView(APIView):
         genai.configure(api_key=env('GEMINI_API_KEY'))
         self.model = genai.GenerativeModel('gemini-1.5-flash')
 
-    def post(self, request, submission_id):
+    def post(self, request, pk):
         student_name = request.user.first_name
-        submission = get_object_or_404(Submission, pk=submission_id)
+        submission = get_object_or_404(Submission, pk=pk)
         assignment = submission.assignment
         prompt = f"""
             Role: You are a programming coach providing feedback on student code.
@@ -333,10 +333,10 @@ class RateFeedbackView(APIView):
     permission_classes = [IsStudentPermission]
     serializer_class = FeedbackRatingSerializer
 
-    def post(self, request, feedback_id):
+    def post(self, request, pk):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        feedback = get_object_or_404(Feedback, pk=feedback_id)
+        feedback = get_object_or_404(Feedback, pk=pk)
         feedback.rating = serializer.validated_data['rating']
         feedback.save()
         return Response({ 'message': 'Thank you! Feedback rated successfully' }, status=status.HTTP_200_OK)

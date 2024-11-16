@@ -18,7 +18,7 @@ urlpatterns = [
     path('assignments/<str:pk>/publish', PublishAssignmentView.as_view(), name='publish-assignment'),
     path('submissions/<str:pk>', SubmissionDetailView.as_view(), name='submission-detail'),
     path('assignments/<str:pk>/results', AssignmentResultData.as_view(), name='assignment-result'),
-    path('submissions/<str:submission_id>/feedback', FeedbackGenerationView.as_view(), name='generate-feedback'),
-    path('feedback/<str:feedback_id>/rate', RateFeedbackView.as_view(), name='rate-feedback'),
+    path('submissions/<str:pk>/feedback', FeedbackGenerationView.as_view(), name='generate-feedback'),
+    path('feedback/<str:pk>/rate', RateFeedbackView.as_view(), name='rate-feedback'),
     path('feedback', FeedbackListView.as_view(), name='feedback-list')
 ]
