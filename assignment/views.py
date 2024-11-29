@@ -37,14 +37,6 @@ class AssignmentCreateView(APIView):
     API endpoint for creating an assignment for a course
 
     This view allows lecturers to create assignments for a course
-
-    Attributes:
-        permission_classes: list of permission classes that the view requires
-        serializer_class: the serializer class to use for serializing the queryset
-    Returns:
-        201 CREATED: If the assignment was created successfully
-        400 BAD REQUEST: If the request data is invalid
-        404 NOT FOUND: If the course does not exist
     """
     serializer_class = AssignmentSerializer
     permission_classes = [IsLecturerPermission]
@@ -66,12 +58,6 @@ class PublishAssignmentView(APIView):
     API endpoint for publishing an assignment
 
     This view allows lecturers to publish an assignment to make it available to students
-
-    Attributes:
-        permission_classes: list of permission classes that the view requires
-    Returns:
-        200 OK: If the assignment was published successfully
-        404 NOT FOUND: If the assignment does not exist
     """
     permission_classes = [IsLecturerPermission]
 
@@ -93,14 +79,6 @@ class AssignmentListView(generics.ListAPIView):
     API endpoint for retrieving all assignments for a course
 
     This view allows users to view all the assignments for a course
-
-    Attributes:
-        permission_classes: list of permission classes that the view requires
-        serializer_class: the serializer class to use for serializing the queryset
-    Returns:
-        200 OK: List of assignments for the course
-        400 BAD REQUEST: If the request data is invalid
-        404 NOT FOUND: If the course does not exist
     """
     serializer_class = AssignmentListSerializer
     permission_classes = [IsAuthenticated]
@@ -116,13 +94,6 @@ class AssignmentDetailView(generics.RetrieveAPIView):
     API endpoint for retrieving an assignment by its id
 
     This view allows users to view the details of an assignment
-    Attributes:
-        permission_classes: list of permission classes that the view requires
-        serializer_class: the serializer class to use for serializing the queryset
-    Returns:
-        200 OK: The assignment details
-        404 NOT FOUND: If the assignment does not exist
-        400 BAD REQUEST: If the request data is invalid
     """
     serializer_class = AssignmentDetailSerializer
     permission_classes = [IsAuthenticated]
@@ -136,13 +107,6 @@ class StudentSubmissionListView(APIView):
 
     This view allows students to view all the past submissions they have made for an assignment
     to enable them to track their progress and improve on their submissions
-
-    Attributes:
-        permission_classes: list of permission classes that the view requires
-        serializer_class: the serializer class to use for serializing the queryset
-    Returns:
-        200 OK: List of submissions for the assignment
-        400 BAD REQUEST: If the request data is invalid
     """
     serializer_class = SubmissionSerializer
     permission_classes = [IsStudentPermission]
@@ -158,14 +122,6 @@ class SubmissionDetailView(generics.RetrieveAPIView):
     API endpoint for retrieving a submission by its id
 
     This view allows users to view the details of a submission made for an assignment
-
-    Attributes:
-        permission_classes: list of permission classes that the view requires
-        serializer_class: the serializer class to use for serializing the queryset
-    Returns:
-        200 OK: The submission details
-        404 NOT FOUND: If the submission does not exist
-        400 BAD REQUEST: If the request data is invalid
     """
     serializer_class = SubmissionDetailSerializer
     queryset = Submission.objects.all()
@@ -178,15 +134,6 @@ class AssignmentSubmissionView(APIView):
 
     This view handles the submission of code for an assignment by a student.
     It calls the code execution service to run the code against the test cases
-
-    Attributes:
-        permission_classes: list of permission classes that the view requires
-        serializer_class: the serializer class to use for serializing the queryset
-        MAX_RETRIES: the maximum number of retries to save the submission to the database
-    Returns:
-        200 OK: The submission results
-        400 BAD REQUEST: If the request data is invalid
-        500 INTERNAL SERVER ERROR: If there was an issue saving the submission to the database
     """
     serializer_class = AssignmentSubmissionSerializer
     permission_classes = [IsStudentPermission]
@@ -253,13 +200,6 @@ class AssignmentResultData(generics.ListAPIView):
 
     This view returns the best assignment submissions for each student who attempted the assignment
     this is useful for analysis and recording of assignment results
-
-    Attributes:
-        permission_classes: list of permission classes that the view requires
-        serializer_class: the serializer class to use for serializing the queryset
-    Returns:
-        200 OK: List of best submissions for the assignment
-        400 BAD REQUEST: If the request data is invalid
     """
     permission_classes = [IsLecturerPermission]
     serializer_class = AssignmentResultDataSerializer
@@ -274,12 +214,6 @@ class FeedbackGenerationView(APIView):
 
     This view takes in the submission results and generates personalized feedback for the student
     based on the test cases that were passed and failed
-
-    Attributes:
-        permission_classes: list of permission classes that the view requires
-    Returns:
-        200 OK: The feedback for the submission
-        400 BAD REQUEST: If the request data is invalid
     """
     permission_classes = [IsStudentPermission]
     throttle_scope = 'feedback'
@@ -294,27 +228,32 @@ class FeedbackGenerationView(APIView):
         submission = get_object_or_404(Submission, pk=pk)
         assignment = submission.assignment
         prompt = f"""
-            Role: You are a programming coach providing feedback on student code.
+            Role: You are a programming coach tasked with providing constructive and encouraging feedback on student code submissions.
 
-            Assignment: {assignment.description}
+            Assignment Description: {assignment.description}
             Programming Language: {assignment.programming_language}
-            Student Code: {submission.code}
+            Student Code Submission: {submission.code}
             Student Name: {student_name}
 
-            Provide feedback addressing:
-                1. Code correctness
-                2. Code style and best practices
-                3. Specific improvement suggestions
-                4. Positive reinforcement for good practices
-    
-            Format feedback in a constructive, encouraging manner.
-            Limit feedback to 20 words.
-            Note: Do not give out the answers but rather guide the student
+            Feedback Requirements:
+
+            Code Correctness: Highlight logical or functional issues without giving direct answers.
+            Code Style and Best Practices: Address readability, formatting, and adherence to programming conventions.
+            Improvement Suggestions: Offer actionable advice for enhancing the code while preserving the student’s ownership of the solution.
+            Positive Reinforcement: Identify and praise specific aspects of the code done well.
+            Additional Instructions:
+
+            Frame feedback constructively, fostering a growth mindset.
+            Do not reveal the solution or make the student overly dependent on external help.
+            Make the feedback concise and focused.
+            Example Output Format:
+
+            'Your code logic is strong. Simplify the loop for clarity. Great use of descriptive variable names—keep it up!'
         """
         try:
             response = self.model.generate_content(prompt)
         except Exception as e:
-            return Response({ 'error': 'CodeBuddy is unavailable right now' })
+            return Response({ 'error': 'Checkmate is unavailable right now' })
 
         # store response in database
         feedback = Feedback(
@@ -332,12 +271,6 @@ class RateFeedbackView(APIView):
 
     This view allows students to rate the feedback generated for their submission
     to enable the system to improve the quality of feedback generated
-
-    Attributes:
-        permission_classes: list of permission classes that the view requires
-    Returns:
-        200 OK: The feedback rating
-        400 BAD REQUEST: If the request data is invalid
     """
     permission_classes = [IsStudentPermission]
     serializer_class = FeedbackRatingSerializer
@@ -356,13 +289,6 @@ class FeedbackListView(generics.ListAPIView):
     API endpoint for retrieving all feedbacks
 
     This view lists all the feedbacks for analysis purposes
-
-    Attributes:
-        permission_classes: list of permission classes that the view requires
-        serializer_class: the serializer class to use for serializing the queryset
-    Returns:
-        200 OK: List of feedback for the submission
-        400 BAD REQUEST: If the request data is invalid
     """
     serializer_class = FeedbackListSerializer
     queryset = Feedback.objects.all()

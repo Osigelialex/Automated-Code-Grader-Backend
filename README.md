@@ -1,6 +1,6 @@
-# Codegradr
+# Checkmate
 
-Codegradr is an automated grading system for programming assignments that combines automated test-case evaluation with LLM-powered personalized feedback for programming assignments. It is built with the Django backend and React/Next.js frontend.
+Checkmate is an automated grading system for programming assignments that combines automated test-case evaluation with LLM-powered personalized feedback for programming assignments. It is built with the Django backend and React/Next.js frontend.
 
 ## Features
 
@@ -47,8 +47,8 @@ Codegradr is an automated grading system for programming assignments that combin
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/Osigelialex/codegradr.git
-cd codegradr
+git clone https://github.com/Osigelialex/checkmate-backend.git
+cd checkmate-backend
 ```
 
 2. **Backend setup**

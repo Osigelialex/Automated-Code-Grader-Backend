@@ -127,7 +127,7 @@ class EmailManager:
             self.send_email(
                 template_path='email_confirmation.html',
                 context=context,
-                subject='Activate Your Codegradr Account',
+                subject='Activate Your Checkmate Account',
                 to_email=user.email
             )
 
@@ -166,7 +166,7 @@ class EmailManager:
             self.send_email(
                 template_path='password_reset.html',
                 context=context,
-                subject='Reset your Codegradr password',
+                subject='Reset your Checkmate password',
                 to_email=user.email
             )
 

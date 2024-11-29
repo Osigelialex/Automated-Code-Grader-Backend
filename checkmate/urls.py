@@ -7,7 +7,7 @@ from drf_spectacular.views import (
 )
 
 api_v1_patterns = [
-    path('account/', include('account.urls')),
+    path('auth/', include('account.urls')),
     path('', include('course_management.urls')),
     path('', include('assignment.urls')),
 ]

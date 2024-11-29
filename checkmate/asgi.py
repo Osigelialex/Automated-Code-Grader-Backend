@@ -1,5 +1,5 @@
 """
-ASGI config for codegradr project.
+ASGI config for checkmate project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'codegradr.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'checkmate.settings')
 
 application = get_asgi_application()

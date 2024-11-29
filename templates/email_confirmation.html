@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to CodeGradr - Email Confirmation</title>
+    <title>Welcome to Checkmate - Email Confirmation</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -71,19 +71,19 @@
 <body>
     <div class="email-container">
         <div class="email-header">
-            <img src="https://example.com/codegradr-logo.png" alt="CodeGradr Logo" class="logo">
-            <h1>Welcome to CodeGradr</h1>
+            <img src="https://example.com/checkmate-logo.png" alt="Checkmate Logo" class="logo">
+            <h1>Welcome to Checkmate</h1>
         </div>
         <div class="email-content">
             <h2>Hello, {{ user.first_name }}!</h2>
-            <p>Thank you for choosing CodeGradr. We're excited to have you on board! To get started, please confirm your email address by clicking the button below:</p>
+            <p>Thank you for choosing Checkmate. We're excited to have you on board! To get started, please confirm your email address by clicking the button below:</p>
             <a href="{{ confirmation_url }}" class="button">Confirm Your Email</a>
             <p>This link will expire in 24 hours for security reasons. If you don't confirm your email within this time, you may need to request a new confirmation email.</p>
-            <p>If you didn't sign up for a CodeGradr account, you can safely ignore this email.</p>
-            <p>Best regards,<br>The CodeGradr Team</p>
+            <p>If you didn't sign up for a Checkmate account, you can safely ignore this email.</p>
+            <p>Best regards,<br>The Checkmate Team</p>
         </div>
         <div class="footer">
-            <p>&copy; {{ year }} CodeGradr. All rights reserved.</p>
+            <p>&copy; {{ year }} Checkmate. All rights reserved.</p>
             <p>123 Coding Street, Tech City, TC 12345</p>
         </div>
     </div>
