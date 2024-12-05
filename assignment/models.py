@@ -7,11 +7,6 @@ import uuid
 
 
 class Assignment(models.Model):
-    class ProgrammingLanguage(models.TextChoices):
-        PYTHON = 'Python'
-        JAVA = 'Java'
-        CPP = 'C++'
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=100)
     description = models.TextField()
@@ -20,7 +15,8 @@ class Assignment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     max_score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(100)])
-    programming_language = models.CharField(choices=ProgrammingLanguage.choices, max_length=10)
+    programming_language = models.CharField(null=True)
+    language_id = models.IntegerField()
     is_draft = models.BooleanField(default=True)
 
     def __str__(self):

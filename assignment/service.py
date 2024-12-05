@@ -15,7 +15,7 @@ class CodeExecutionService:
             "Content-Type": "application/json"
         }
 
-    def submit_code(self, source_code: str, test_cases: List[Dict[str, any]]) -> dict:
+    def submit_code(self, source_code: str, language_id: int, test_cases: List[Dict[str, any]]) -> dict:
         """Perform batch submission to Judge0"""
         try:
             url = f"{self.BASE_URL}/submissions/batch?base64_encoded=true"
@@ -23,7 +23,7 @@ class CodeExecutionService:
                 "submissions": [
                     {
                         "source_code": base64.b64encode(source_code.encode()).decode(),
-                        "language_id": 100,
+                        "language_id": language_id,
                         "stdin": base64.b64encode(tc["input"].encode()).decode(),
                         "expected_output": base64.b64encode(tc["output"].encode()).decode()
                     }
@@ -51,7 +51,30 @@ class CodeExecutionService:
                     "time": f"{submission.get('time', '0')}s",
                     "status": submission.get("status", {}).get("description", "Unknown")
                 })
-            return {"submissions": cleaned_submissions}
+            return {"submission_result": cleaned_submissions}
         except requests.exceptions.RequestException as e:
             logger.error(f"Error getting submission result: {str(e)}")
             raise
+    
+    def get_available_languages(self) -> dict:
+        """Get available languages from Judge0"""
+        try:
+            url = f"{self.BASE_URL}/languages"
+            response = requests.get(url, headers=self.headers)
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error getting available languages: {str(e)}")
+            raise
+
+    def validate_language(self, language_id) -> bool:
+        """Checks if a specified language id is valid"""
+        try:
+            supported_languages = self.get_available_languages()
+            if any(language_id == language.get('id') for language in supported_languages):
+                return True
+            return False
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error getting available languages: {str(e)}")
+            raise
+
+code_execution_service = CodeExecutionService()

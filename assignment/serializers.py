@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.utils import timezone
 from .models import Feedback, Assignment, TestCase, ExampleTestCase, Submission, Feedback
 from course_management.serializers import CourseSerializer
+from .service import code_execution_service
 from account.models import CustomUser
 import logging
 
@@ -38,11 +39,11 @@ class AssignmentSerializer(serializers.ModelSerializer):
         if value <= 0:
             raise serializers.ValidationError('Max score must be greater than 0')
         return value
-
-    def validate_programming_language(self, value):
-        if value not in ['Python', 'Java', 'C++']:
-            raise serializers.ValidationError('Invalid programming language')
-        return value
+    
+    def validate_language_id(self, language_id):
+        if code_execution_service.validate_language(language_id):
+            return True
+        return False
     
     def validate(self, data):
         test_cases = data.get('test_cases', [])
@@ -77,7 +78,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assignment
         fields = ['title', 'description', 'deadline',
-                  'max_score', 'programming_language',
+                  'max_score', 'language_id',
                   'course', 'example_test_cases', 'test_cases']
         read_only_fields = ['course']
 
@@ -88,7 +89,7 @@ class AssignmentListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assignment
         fields = ['id', 'title', 'description', 'deadline',
-                  'max_score', 'programming_language', 'is_draft',
+                  'max_score', 'programming_language', 'language_id', 'is_draft',
                   'example_test_cases', 'created_at', 'updated_at']
         ordering = ['-created_at']
 
@@ -159,5 +160,13 @@ class FeedbackListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Feedback
-        fields = ['content', 'rating', 'code', 'score']
+        fields = ['id', 'content', 'rating', 'code', 'score']
         ordering = ['-created_at']
+
+
+class ProgrammingLanguageSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+    class Meta:
+        fields = ['id', 'name']

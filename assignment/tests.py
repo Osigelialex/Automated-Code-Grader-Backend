@@ -42,7 +42,8 @@ class AssignmentViewsTest(APITestCase):
             description='Test description',
             deadline=timezone.now() + timezone.timedelta(days=7),
             max_score=100,
-            programming_language=Assignment.ProgrammingLanguage.PYTHON,
+            programming_language='Python (3.12.5)',
+            language_id=100,
             is_draft=False
         )
 
@@ -79,7 +80,8 @@ class AssignmentViewsTest(APITestCase):
             'description': 'Assignment description',
             'deadline': (timezone.now() + timezone.timedelta(days=7)).isoformat(),
             'max_score': 100,
-            'programming_language': Assignment.ProgrammingLanguage.PYTHON,
+            'programming_language': 'Python (3.12.5)',
+            'language_id': 100,
             'example_test_cases': [
                 {
                     'input': 'example_input',
@@ -111,7 +113,6 @@ class AssignmentViewsTest(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['title'], 'New Assignment')
-        self.assertEqual(response.data['programming_language'], Assignment.ProgrammingLanguage.PYTHON)
         
         # Verify test cases were created
         assignment = Assignment.objects.get(title='New Assignment')
@@ -127,7 +128,8 @@ class AssignmentViewsTest(APITestCase):
             'description': 'Assignment description',
             'deadline': (timezone.now() + timezone.timedelta(days=7)).isoformat(),
             'max_score': 100,
-            'programming_language': Assignment.ProgrammingLanguage.PYTHON,
+            'programming_language': 'Python (3.12.5)',
+            'language_id': 100,
             'example_test_cases': [{'input': 'test', 'output': 'expected'}],
             'test_cases': [{'input': 'test', 'output': 'expected'}]
         }
@@ -169,7 +171,7 @@ class AssignmentViewsTest(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['title'], 'Test Assignment')
-        self.assertEqual(response.data['programming_language'], Assignment.ProgrammingLanguage.PYTHON)
+        self.assertEqual(response.data['programming_language'], 'Python (3.12.5)')
         self.assertTrue('example_test_cases' in response.data)
 
     @patch('assignment.service.CodeExecutionService')
@@ -256,7 +258,8 @@ class AssignmentViewsTest(APITestCase):
             'description': 'Test description',
             'deadline': (timezone.now() + timezone.timedelta(days=7)).isoformat(),
             'max_score': 101,  # Invalid: more than 100
-            'programming_language': Assignment.ProgrammingLanguage.PYTHON
+            'programming_lanaguage': 'Python (3.12.5)',
+            'language_id': 100,
         }
         
         url = reverse('create-assignment', kwargs={'pk': self.course.id})

@@ -5,7 +5,6 @@ from rest_framework import generics, status
 from django_filters import rest_framework as filters
 from account.permissions import IsLecturerPermission, IsStudentPermission
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from .service import CodeExecutionService
 from .models import Assignment, Course, Submission, Feedback
 from django.shortcuts import get_object_or_404
 from django.db import transaction
@@ -14,7 +13,7 @@ from django.utils import timezone
 from .filters import AssignmentFilter
 from ast import literal_eval
 import google.generativeai as genai
-from .service import CodeExecutionService
+from .service import code_execution_service
 import logging, environ, logging
 from .serializers import (
     AssignmentSerializer,
@@ -25,7 +24,8 @@ from .serializers import (
     SubmissionDetailSerializer,
     AssignmentResultDataSerializer,
     FeedbackRatingSerializer,
-    FeedbackListSerializer
+    FeedbackListSerializer,
+    ProgrammingLanguageSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -139,10 +139,6 @@ class AssignmentSubmissionView(APIView):
     permission_classes = [IsStudentPermission]
     throttle_scope = 'submission'
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.code_execution_client = CodeExecutionService()
-
     @transaction.atomic
     def post(self, request, pk):
         assignment = get_object_or_404(Assignment, pk=pk)
@@ -162,15 +158,15 @@ class AssignmentSubmissionView(APIView):
         test_cases = [{"input": tc["input"], "output": tc["output"]} for tc in test_cases]
 
         # retrieve tokens needed to get the assignment submission results from the judge0 API
-        tokens = self.code_execution_client.submit_code(serializer.validated_data['code'], test_cases)
+        tokens = code_execution_service.submit_code(serializer.validated_data['code'], assignment.language_id,  test_cases)
 
         # using the submission token to get the assignment submission result from judge0 API
-        submission_results = self.code_execution_client.get_submission_result(tokens)
+        submission_results = code_execution_service.get_submission_result(tokens)
 
         # calculate final grade by using the number of passed test cases
         test_case_count = len(test_cases)
         accepted_count = 0
-        for result in submission_results["submissions"]:
+        for result in submission_results["submission_result"]:
             if result["status"] == "Accepted":
                 accepted_count += 1
 
@@ -179,17 +175,20 @@ class AssignmentSubmissionView(APIView):
         # include score in the response
         submission_results['score'] = score
 
-        # store the submission results in cache for 5 minutes
-        cache.set(serializer.validated_data['code'], repr(submission_results), 300)
-
         # store submission in database
-        Submission.objects.create(
+        submission = Submission.objects.create(
             assignment=assignment,
             student=request.user,
             code=serializer.validated_data['code'],
             score=score,
             results=submission_results
         )
+
+        # add submission resutls to the response
+        submission_results['submission_id'] = submission.id;
+
+        # store the submission results in cache for 5 minutes
+        cache.set(serializer.validated_data['code'], repr(submission_results), 300)
 
         return Response(submission_results, status=status.HTTP_200_OK)
 
@@ -222,38 +221,37 @@ class FeedbackGenerationView(APIView):
         super().__init__(*args, **kwargs)
         genai.configure(api_key=env('GEMINI_API_KEY'))
         self.model = genai.GenerativeModel('gemini-1.5-flash')
-
+    
     def post(self, request, pk):
+        if cache.get(f'feedback_{pk}'):
+            return Response({ 'feedback': cache.get(f'feedback_{pk}') }, status=status.HTTP_200_OK)
+
         student_name = request.user.first_name
         submission = get_object_or_404(Submission, pk=pk)
         assignment = submission.assignment
         prompt = f"""
-            Role: You are a programming coach tasked with providing constructive and encouraging feedback on student code submissions.
+        Role: Programming Assistant providing constructive student code feedback
 
-            Assignment Description: {assignment.description}
-            Programming Language: {assignment.programming_language}
-            Student Code Submission: {submission.code}
-            Student Name: {student_name}
+        Key Objectives:
+        - Evaluate code correctness without giving direct solutions
+        - Assess code style and best practices
+        - Provide actionable improvement suggestions
+        - Offer positive reinforcement
 
-            Feedback Requirements:
+        Feedback Principles:
+        - Constructive and encouraging tone
+        - Preserve student's problem-solving ownership
+        - Keep feedback concise, focused and short
 
-            Code Correctness: Highlight logical or functional issues without giving direct answers.
-            Code Style and Best Practices: Address readability, formatting, and adherence to programming conventions.
-            Improvement Suggestions: Offer actionable advice for enhancing the code while preserving the student’s ownership of the solution.
-            Positive Reinforcement: Identify and praise specific aspects of the code done well.
-            Additional Instructions:
-
-            Frame feedback constructively, fostering a growth mindset.
-            Do not reveal the solution or make the student overly dependent on external help.
-            Make the feedback concise and focused.
-            Example Output Format:
-
-            'Your code logic is strong. Simplify the loop for clarity. Great use of descriptive variable names—keep it up!'
+        Assignment Description: {assignment.description}
+        Programming Language: {assignment.programming_language}
+        Student Code Submission: {submission.code}
+        Student Name: {student_name}
         """
         try:
             response = self.model.generate_content(prompt)
         except Exception as e:
-            return Response({ 'error': 'Checkmate is unavailable right now' })
+            return Response({ 'error': 'CheckMate is unavailable right now' })
 
         # store response in database
         feedback = Feedback(
@@ -262,6 +260,9 @@ class FeedbackGenerationView(APIView):
         )
 
         feedback.save()
+
+        # cache feedback in redis for 30 minutes
+        cache.set(f'feedback_{submission.id}', response.text, 1800)
         return Response({ 'feedback': response.text }, status=status.HTTP_200_OK)
 
 
@@ -292,3 +293,18 @@ class FeedbackListView(generics.ListAPIView):
     """
     serializer_class = FeedbackListSerializer
     queryset = Feedback.objects.all()
+
+
+class RetrieveProgrammingLanguages(generics.ListAPIView):
+    """
+    Get a list of available programming languages
+    """
+    serializer_class = ProgrammingLanguageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        try:
+            languages = code_execution_service.get_available_languages()
+            return languages
+        except Exception as e:
+            return Response({ 'error': 'Error fetching programming languages' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

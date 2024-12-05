@@ -8,7 +8,8 @@ from .views import (
     FeedbackGenerationView,
     RateFeedbackView,
     FeedbackListView,
-    PublishAssignmentView
+    PublishAssignmentView,
+    RetrieveProgrammingLanguages
     )
 
 urlpatterns = [
@@ -20,5 +21,6 @@ urlpatterns = [
     path('assignments/<str:pk>/results', AssignmentResultData.as_view(), name='assignment-result'),
     path('submissions/<str:pk>/feedback', FeedbackGenerationView.as_view(), name='generate-feedback'),
     path('feedback/<str:pk>/rate', RateFeedbackView.as_view(), name='rate-feedback'),
-    path('feedback', FeedbackListView.as_view(), name='feedback-list')
+    path('feedback', FeedbackListView.as_view(), name='feedback-list'),
+    path('languages', RetrieveProgrammingLanguages.as_view(), name='programming-languages')
 ]

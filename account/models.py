@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils import timezone
 import uuid
@@ -11,7 +10,7 @@ class CustomUserManager(BaseUserManager):
             raise ValueError("The email field must be set")
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
-        user.password = make_password(password)
+        user.set_password(password)
         user.is_active = False
         user.save(using=self._db)
         return user
