@@ -4,7 +4,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from unittest.mock import Mock, patch
 from django.contrib.auth import get_user_model
-from .models import Assignment, Course, Submission, TestCase, ExampleTestCase
+from .models import Assignment, Course, Submission, TestCase
 
 User = get_user_model()
 
@@ -47,18 +47,47 @@ class AssignmentViewsTest(APITestCase):
             is_draft=False
         )
 
-        # Create example test cases
-        self.example_test_case = ExampleTestCase.objects.create(
-            assignment=self.assignment,
-            input="example_input",
-            output="example_output"
-        )
+        # Bulk create test cases for efficiency
+        test_cases = [
+            TestCase(
+                assignment=self.assignment,
+                input="test_input",
+                output="test_output"
+            ),
+            TestCase(
+                assignment=self.assignment,
+                input="test_input", 
+                output="test_output",
+                is_hidden=True
+            ),
+            TestCase(
+                assignment=self.assignment,
+                input="test_input", 
+                output="test_output",
+                is_hidden=True
+            )
+        ]
+        TestCase.objects.bulk_create(test_cases)
 
-        # Create hidden test cases
+        # Create test cases
         self.test_case = TestCase.objects.create(
             assignment=self.assignment,
             input="test_input",
             output="test_output"
+        )
+
+        self.hidden_test_case = TestCase.objects.create(
+            assignment=self.assignment,
+            input="test_input",
+            output="test_output",
+            is_hidden=True
+        )
+
+        self.hidden_test_case = TestCase.objects.create(
+            assignment=self.assignment,
+            input="test_input",
+            output="test_output",
+            is_hidden=True
         )
 
         # Create a submission
@@ -80,26 +109,17 @@ class AssignmentViewsTest(APITestCase):
             'description': 'Assignment description',
             'deadline': (timezone.now() + timezone.timedelta(days=7)).isoformat(),
             'max_score': 100,
-            'programming_language': 'Python (3.12.5)',
             'language_id': 100,
-            'example_test_cases': [
-                {
-                    'input': 'example_input',
-                    'output': 'example_output'
-                },
-                {
-                    'input': 'example_input',
-                    'output': 'example_output'
-                }
-            ],
             'test_cases': [
                 {
                     'input': 'test_input',
-                    'output': 'test_output'
+                    'output': 'test_output',
+                    'is_hidden': True
                 },
                 {
                     'input': 'test_input',
-                    'output': 'test_output'
+                    'output': 'test_output',
+                    'is_hidden': True
                 },
                 {
                     'input': 'test_input',
@@ -116,7 +136,6 @@ class AssignmentViewsTest(APITestCase):
         
         # Verify test cases were created
         assignment = Assignment.objects.get(title='New Assignment')
-        self.assertTrue(assignment.example_test_cases.exists())
         self.assertTrue(assignment.test_cases.exists())
 
     def test_non_lecturer_cannot_create_assignment(self):
@@ -128,12 +147,13 @@ class AssignmentViewsTest(APITestCase):
             'description': 'Assignment description',
             'deadline': (timezone.now() + timezone.timedelta(days=7)).isoformat(),
             'max_score': 100,
-            'programming_language': 'Python (3.12.5)',
             'language_id': 100,
-            'example_test_cases': [{'input': 'test', 'output': 'expected'}],
-            'test_cases': [{'input': 'test', 'output': 'expected'}]
+            'test_cases': [
+                {'input': 'test', 'output': 'expected', 'is_hidden': False},
+                {'input': 'test2', 'output': 'expected2', 'is_hidden': False}
+            ]
         }
-        
+    
         url = reverse('create-assignment', kwargs={'pk': self.course.id})
         response = self.client.post(url, assignment_data, format='json')
         
@@ -159,8 +179,6 @@ class AssignmentViewsTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(len(response.data) > 0)
         self.assertEqual(response.data[0]['title'], 'Test Assignment')
-        self.assertTrue('example_test_cases' in response.data[0])
-        self.assertFalse('test_cases' in response.data[0])  # Hidden test cases shouldn't be visible
 
     def test_assignment_detail_retrieval(self):
         """Test retrieving assignment details."""
@@ -172,7 +190,6 @@ class AssignmentViewsTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['title'], 'Test Assignment')
         self.assertEqual(response.data['programming_language'], 'Python (3.12.5)')
-        self.assertTrue('example_test_cases' in response.data)
 
     @patch('assignment.service.CodeExecutionService')
     def test_successful_submission(self, mock_code_execution_service):

@@ -26,21 +26,12 @@ class Assignment(models.Model):
         ordering = ['created_at']
 
 
-class ExampleTestCase(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='example_test_cases')
-    input = models.CharField(max_length=100)
-    output = models.CharField(max_length=100)
-
-    def __str__(self):
-        return f'{self.assignment.title} - {self.input}'
-
-
 class TestCase(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='test_cases')
     input = models.CharField(max_length=100)
     output = models.CharField(max_length=100)
+    is_hidden = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.assignment.title} - {self.input}'

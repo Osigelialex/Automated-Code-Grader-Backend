@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.utils import timezone
-from .models import Feedback, Assignment, TestCase, ExampleTestCase, Submission, Feedback
+from .models import Feedback, Assignment, TestCase, Submission, Feedback
 from course_management.serializers import CourseSerializer
 from .service import code_execution_service
 from account.models import CustomUser
@@ -20,14 +20,7 @@ class TestCaseSerializer(serializers.ModelSerializer):
         return value
 
 
-class ExampleTestCaseSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ExampleTestCase
-        fields = ['input', 'output']
-
-
 class AssignmentSerializer(serializers.ModelSerializer):
-    example_test_cases = ExampleTestCaseSerializer(many=True)
     test_cases = TestCaseSerializer(many=True)
 
     def validate_deadline(self, value):
@@ -41,24 +34,24 @@ class AssignmentSerializer(serializers.ModelSerializer):
         return value
     
     def validate_language_id(self, language_id):
-        if code_execution_service.validate_language(language_id):
-            return True
-        return False
+        if not code_execution_service.validate_language(language_id):
+            raise serializers.ValidationError('Language id is invalid')
+        return language_id
     
     def validate(self, data):
         test_cases = data.get('test_cases', [])
-        example_test_cases = data.get('example_test_cases', [])
 
         if len(test_cases) < 3:
             raise serializers.ValidationError('At least three test case must be provided')
 
-        if len(example_test_cases) < 2:
-            raise serializers.ValidationError('At least two example test case must be provided')
+        # at least 2 hidden test cases should be created
+        if len([test_case for test_case in test_cases if test_case.get('is_hidden', True)]) < 2:
+            raise serializers.ValidationError('At least two hidden test case must be provided')
+
         return data
 
     def create(self, validated_data):
         test_cases_data = validated_data.pop('test_cases')
-        example_test_cases = validated_data.pop('example_test_cases')
         assignment = Assignment.objects.create(**validated_data)
 
         # store test cases in db
@@ -67,36 +60,27 @@ class AssignmentSerializer(serializers.ModelSerializer):
             for test_case_data in test_cases_data
         ])
 
-        # store example test cases in db
-        ExampleTestCase.objects.bulk_create([
-            ExampleTestCase(assignment=assignment, **example_test_case)
-            for example_test_case in example_test_cases
-        ])
-
         return assignment
 
     class Meta:
         model = Assignment
         fields = ['title', 'description', 'deadline',
                   'max_score', 'language_id',
-                  'course', 'example_test_cases', 'test_cases']
+                  'course', 'test_cases']
         read_only_fields = ['course']
 
 
 class AssignmentListSerializer(serializers.ModelSerializer):
-    example_test_cases = ExampleTestCaseSerializer(many=True)
-
     class Meta:
         model = Assignment
         fields = ['id', 'title', 'description', 'deadline',
                   'max_score', 'programming_language', 'language_id', 'is_draft',
-                  'example_test_cases', 'created_at', 'updated_at']
+                'created_at', 'updated_at']
         ordering = ['-created_at']
 
 
 class AssignmentDetailSerializer(serializers.ModelSerializer):
     test_cases = TestCaseSerializer(many=True)
-    example_test_cases = ExampleTestCaseSerializer(many=True)
     course = CourseSerializer()
 
     class Meta:

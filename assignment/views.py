@@ -5,13 +5,12 @@ from rest_framework import generics, status
 from django_filters import rest_framework as filters
 from account.permissions import IsLecturerPermission, IsStudentPermission
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from .models import Assignment, Course, Submission, Feedback
+from .models import Assignment, Course, Submission, Feedback, TestCase
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.core.cache import cache
 from django.utils import timezone
 from .filters import AssignmentFilter
-from ast import literal_eval
 import google.generativeai as genai
 from .service import code_execution_service
 import logging, environ, logging
@@ -100,6 +99,13 @@ class AssignmentDetailView(generics.RetrieveAPIView):
     queryset = Assignment.objects.all()
     lookup_field = 'pk'
 
+    def get(self, request, *args, **kwargs):
+        assignment = self.get_object()
+        visible_test_cases = TestCase.objects.filter(assignment=assignment, is_hidden=False)
+        assignment_data = self.get_serializer(assignment).data
+        assignment_data['test_cases'] = list(visible_test_cases.values('id', 'input', 'output'))
+        return Response(assignment_data)
+
 
 class StudentSubmissionListView(APIView):
     """
@@ -150,7 +156,7 @@ class AssignmentSubmissionView(APIView):
 
         # check if code is already in cache
         if cache.get(serializer.validated_data['code']):
-            return Response(literal_eval(cache.get(serializer.validated_data['code'])), status=status.HTTP_200_OK)
+            return Response(cache.get(serializer.validated_data['code']), status=status.HTTP_200_OK)
 
         # Extract all the test cases created for the assignment and represent them
         # in an input-output format for easy validation by the code execution service
