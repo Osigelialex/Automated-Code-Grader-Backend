@@ -1,6 +1,6 @@
-# Checkmate
+# Automated Grader for Programming Assignments
 
-Checkmate is an automated grading system for programming assignments that combines automated test-case evaluation with LLM-powered personalized feedback for programming assignments. It is built with the Django backend and React/Next.js frontend.
+CheckMate is an automated grading system for programming assignments that combines automated test-case evaluation with LLM-powered personalized feedback for programming assignments.
 
 ## Features
 
@@ -35,7 +35,7 @@ Checkmate is an automated grading system for programming assignments that combin
 ### Frontend
 - React/Next.js
 - TailwindCSS
-- CodeMirror (for code editor)
+- Monaco (for code editor)
 - Axios (for API calls)
 
 ### LLM Integration
