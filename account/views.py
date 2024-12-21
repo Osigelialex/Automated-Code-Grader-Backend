@@ -18,7 +18,8 @@ from .serializers import (
     LoginUserSerializer,
     SendActivationTokenSerializer,
     ResetPasswordSerializer,
-    ActivateAccountSerializer
+    ActivateAccountSerializer,
+    ProfileDetailSerializer
     )
 
 
@@ -229,3 +230,15 @@ class ResetPasswordView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'message': 'Password reset successful'}, status=status.HTTP_200_OK)
+
+
+
+class FetchProfileView(generics.RetrieveAPIView):
+    """
+    Fetches the profile of the currently logged in user
+    """
+    permission_classes = [AllowAny]
+    serializer_class = ProfileDetailSerializer
+
+    def get_object(self):
+        return self.request.user

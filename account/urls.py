@@ -8,7 +8,8 @@ from .views import (
     SendActivationTokenView,
     ResetPasswordView,
     RefreshTokenView,
-    LogoutView
+    LogoutView,
+    FetchProfileView
 )
 
 
@@ -22,4 +23,5 @@ urlpatterns = [
     path('request-password-reset', ForgottenPasswordView.as_view(), name='reset-password'),
     path('<str:token>/reset-password', ResetPasswordView.as_view(), name='reset-password'),
     path('send-activation-token', SendActivationTokenView.as_view(), name='send-activation-token'),
+    path('profile', FetchProfileView.as_view(), name='profile'),
 ]

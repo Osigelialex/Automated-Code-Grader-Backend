@@ -1,6 +1,8 @@
 from django.conf import settings
 import logging, requests, base64
 from typing import List, Dict
+from django.core.cache import cache
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +60,19 @@ class CodeExecutionService:
     
     def get_available_languages(self) -> dict:
         """Get available languages from Judge0"""
+        cached_languages = cache.get('languages')
+        if cached_languages:
+            return json.loads(cached_languages)
+    
         try:
             url = f"{self.BASE_URL}/languages"
             response = requests.get(url, headers=self.headers)
-            return response.json()
+            languages = response.json()
+
+            # store response in cache
+            cache.set('languages', json.dumps(languages), 3600)
+            return languages
+
         except requests.exceptions.RequestException as e:
             logger.error(f"Error getting available languages: {str(e)}")
             raise

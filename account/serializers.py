@@ -155,3 +155,32 @@ class LoginUserSerializer(serializers.Serializer):
         if user and user.is_active:
             return user
         raise serializers.ValidationError('Invalid email or password')
+
+
+class StudentProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = ['matric', 'level']
+
+class LecturerProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lecturer
+        fields = ['staff_id']
+
+
+class ProfileDetailSerializer(serializers.ModelSerializer):
+    student_details = StudentProfileSerializer(source='student_profile', read_only=True)
+    lecturer_details = LecturerProfileSerializer(source='lecturer_profile', read_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ['email', 'first_name', 'last_name', 'department', 'role', 'student_details', 'lecturer_details']
+        read_only_fields = ['email', 'role']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.role == CustomUser.Role.STUDENT:
+            data.pop('lecturer_details', None)
+        else:
+            data.pop('student_details', None)
+        return data
