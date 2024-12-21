@@ -7,10 +7,8 @@ from .views import (
     LoginView,
     SendActivationTokenView,
     ResetPasswordView,
-)
-from rest_framework_simplejwt.views import (
-    TokenRefreshView,
-    TokenBlacklistView
+    RefreshTokenView,
+    LogoutView
 )
 
 
@@ -19,8 +17,8 @@ urlpatterns = [
     path('register-lecturer', RegisterLecturerView.as_view(), name='lecturer-register'),
     path('activate', ActivateAccountView.as_view(), name='activate-account'),
     path('login', LoginView.as_view(), name='login'),
-    path('refresh', TokenRefreshView.as_view(), name='token_refresh'),
-    path('logout', TokenBlacklistView.as_view(), name='logout'),
+    path('refresh', RefreshTokenView.as_view(), name='token_refresh'),
+    path('logout', LogoutView.as_view(), name='logout'),
     path('request-password-reset', ForgottenPasswordView.as_view(), name='reset-password'),
     path('<str:token>/reset-password', ResetPasswordView.as_view(), name='reset-password'),
     path('send-activation-token', SendActivationTokenView.as_view(), name='send-activation-token'),

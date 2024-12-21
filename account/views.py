@@ -8,12 +8,14 @@ from django.db import transaction
 from .email_manager import email_manager
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import InvalidToken
 from course_management.serializers import MessageSerializer
 from .serializers import (
     StudentRegistrationSerializer,
     LecturerRegistrationSerializer,
     ForgottenPasswordSerializer,
-    MyTokenObtainPairSerializer,
+    LoginUserSerializer,
     SendActivationTokenSerializer,
     ResetPasswordSerializer,
     ActivateAccountSerializer
@@ -25,6 +27,7 @@ class BaseRegisterView(generics.CreateAPIView):
     Base class for registering users into the system
     """
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -58,7 +61,25 @@ class RegisterLecturerView(BaseRegisterView):
 
 
 class LoginView(TokenObtainPairView):
-    serializer_class = MyTokenObtainPairSerializer
+    serializer_class = LoginUserSerializer
+    authentication_classes = []
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data
+        if not user.is_active:
+            email_manager.send_activation_email(user)
+            return Response({ 'message': 'Please check your email to verify your account'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        refresh = RefreshToken.for_user(user)
+        access = str(refresh.access_token)
+
+        response = Response({ 'message': 'Login successful'}, status=status.HTTP_200_OK)
+        response.set_cookie(key='access_token', value=access, httponly=True, secure=True, samesite='None')
+        response.set_cookie(key='refresh_token', value=str(refresh), httponly=True, secure=True, samesite='None')
+        return response
 
 
 class SendActivationTokenView(APIView):
@@ -66,6 +87,7 @@ class SendActivationTokenView(APIView):
     Send an account activation token to a user
     """
     serializer_class = SendActivationTokenSerializer
+    authentication_classes = []
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
@@ -85,11 +107,58 @@ class SendActivationTokenView(APIView):
             return Response({ 'message': 'No user with that email address' }, status=status.HTTP_404_NOT_FOUND)
 
 
+class RefreshTokenView(APIView):
+    """
+    Refreshes the access token using the refresh token
+    """
+    authentication_classes = []
+
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get('refresh_token')
+        if not refresh_token:
+            return Response({'message': 'Refresh token not included'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            refresh = RefreshToken(refresh_token)
+            access_token = str(refresh.access_token)
+
+            response = Response({'message': 'Token refreshed successfully'}, status=status.HTTP_200_OK)
+            response.set_cookie(key='access_token', value=access_token, httponly=True, secure=True, samesite='None')
+
+            return response
+        except InvalidToken:
+            return Response({ 'message': 'Refresh token is invalid'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LogoutView(APIView):
+    """
+    Logs out a user by blacklisting their refresh token and deleting the access and refresh tokens from cookies
+    """
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get("refresh_token")
+        if not refresh_token:
+            return Response({'message': 'Already logged out'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            refresh = RefreshToken(refresh_token)
+            refresh.blacklist()
+        
+            response = Response({'message': 'Successfully logged out'})
+            response.delete_cookie('access_token')
+            response.delete_cookie('refresh_token')
+
+            return response
+
+        except Exception as e:
+            return Response({ 'message': 'Could not invalidate token'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class ActivateAccountView(APIView):
     """
     View to activate user account using UID and token
     """
     serializer_class = ActivateAccountSerializer
+    authentication_classes = []
 
     @extend_schema(
         parameters=[
@@ -127,6 +196,7 @@ class ForgottenPasswordView(APIView):
     View to reset a users password if forgotten
     """
     serializer_class = ForgottenPasswordSerializer
+    authentication_classes = []
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -146,6 +216,7 @@ class ResetPasswordView(APIView):
     View to reset a users password
     """
     serializer_class = ResetPasswordSerializer
+    authentication_classes = []
 
     @extend_schema(
         responses={

@@ -2,10 +2,8 @@ from rest_framework import serializers
 from django.db import transaction
 from .models import CustomUser, Lecturer, Student, Token
 from .email_manager import email_manager
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from django.contrib.auth import get_user_model
-import re
-import base64
+from django.contrib.auth import authenticate
+import re, base64
 
 
 class BaseRegisterSerializer(serializers.ModelSerializer):
@@ -148,34 +146,12 @@ class SendActivationTokenSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
 
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
-        credentials = {
-            # Retrieve only the username field from paylod
-            self.username_field: attrs.get(self.username_field),
-            'password': attrs.get('password')
-        }
+class LoginUserSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(write_only=True, required=True)
 
-        # Get the auth user model used for the django app
-        User = get_user_model()
-        
-        try:
-            user = User.objects.get(**{self.username_field: credentials[self.username_field]})
-            
-            # Check if user is active
-            if not user.is_active:
-                raise serializers.ValidationError(
-                    {'detail': 'Account is not active.'},
-                    code='inactive_account'
-                )
-                
-            # If user is active, proceed with normal token generation
-            return super().validate(attrs)
-
-        except User.DoesNotExist:
-            # We don't want to reveal whether a user exists or not
-            # So we use the same error message as invalid credentials
-            raise serializers.ValidationError(
-                {'detail': 'No active account found with the given credentials'},
-                code='authorization'
-            )
+    def validate(self, data):
+        user = authenticate(**data)
+        if user and user.is_active:
+            return user
+        raise serializers.ValidationError('Invalid email or password')

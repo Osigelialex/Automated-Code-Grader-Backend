@@ -1,10 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
-from drf_spectacular.views import (
-    SpectacularSwaggerView,
-    SpectacularAPIView,
-    SpectacularRedocView
-)
+from .swagger import CustomSpectacularAPIView, CustomSpectacularSwaggerView, CustomSpectacularRedocView
+
 
 api_v1_patterns = [
     path('auth/', include('account.urls')),
@@ -13,9 +10,9 @@ api_v1_patterns = [
 ]
 
 schema_patterns = [
-    path("schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
-    path('redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    path("schema/", CustomSpectacularAPIView.as_view(), name="schema"),
+    path("", CustomSpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path('redoc/', CustomSpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
 
 urlpatterns = [
