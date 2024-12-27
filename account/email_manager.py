@@ -4,11 +4,9 @@ from django.core.mail import EmailMessage
 from django.db import transaction
 from django.utils import timezone
 from django.conf import settings
+from django.core.cache import cache
 from typing import Any, Dict, Optional
-from .models import Token
-import base64
-import environ
-import logging
+import environ, logging
 
 logger = logging.getLogger(__name__)
 
@@ -36,33 +34,14 @@ class EmailManager:
             
         Returns:
             str: Generated token
-            
-        Raises:
-            Token.DoesNotExist: If token creation fails
         """
         try:
             token = get_random_string(length=64)
-            Token.objects.create(
-                user=user,
-                key=token,
-                expires_at=timezone.now() + (expiry or self.token_expiry)
-            )
+            cache.set(token, user.id, timeout=(expiry or self.token_expiry).seconds)
             return token
         except Exception as e:
             logger.error(f"Token generation failed for user {user.id}: {str(e)}")
             raise
-    
-    def _encode_uid(self, user_id: int) -> str:
-        """
-        Encode user ID for URL safety.
-        
-        Args:
-            user_id: Integer user ID to encode
-            
-        Returns:
-            str: Base64 encoded user ID
-        """
-        return base64.urlsafe_b64encode(str(user_id).encode()).decode('utf-8')
     
     def send_email(
         self,
@@ -111,11 +90,10 @@ class EmailManager:
             Exception: If email sending fails
         """
         try:
-            uid = self._encode_uid(user.pk)
             token = self.generate_user_token(user)
             confirmation_url = (
-                f'{self.env("BASE_URL")}/api/v1/account/activate/'
-                f'?uid={uid}&token={token}'
+                f'{self.env("BASE_URL")}/api/v1/auth/activate'
+                f'?token={token}'
             )
             
             context = {
@@ -153,7 +131,7 @@ class EmailManager:
                 expiry=timezone.timedelta(hours=1)
             )
             password_reset_url = (
-                f'{self.env("BASE_URL")}/api/v1/account/reset_password/'
+                f'{self.env("BASE_URL")}/api/v1/auth/reset_password'
                 f'?token={token}'
             )
             

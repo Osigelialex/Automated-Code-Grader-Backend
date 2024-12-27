@@ -1,9 +1,9 @@
 from rest_framework import serializers
 from django.db import transaction
-from .models import CustomUser, Lecturer, Student, Token
-from .email_manager import email_manager
+from .models import CustomUser, Lecturer, Student
+from django.core.cache import cache
 from django.contrib.auth import authenticate
-import re, base64
+import re
 
 
 class BaseRegisterSerializer(serializers.ModelSerializer):
@@ -41,9 +41,8 @@ class BaseRegisterSerializer(serializers.ModelSerializer):
             role=self.get_role()
         )
 
-        profile = self.create_profile(user=user, **validated_data)
-        email_manager.send_activation_email(user)
-        return profile
+        self.create_profile(user=user, **validated_data)
+        return user
     
     def create_profile(self, user, validated_data):
         raise NotImplementedError('Subclass must implement create_profile()')
@@ -91,27 +90,21 @@ class ForgottenPasswordSerializer(serializers.Serializer):
 
 
 class ActivateAccountSerializer(serializers.Serializer):
-    uid = serializers.CharField(required=True)
     token = serializers.CharField(required=True)
     
     def validate(self, data):
         try:
-            user_id = base64.b64decode(data['uid']).decode('utf-8')
-            user = CustomUser.objects.get(pk=user_id)
-            token = Token.objects.get(key=data['token'])
-
-            if token.is_used or token.is_expired():
+            # Check if the token is valid by validating if it's still in cache 
+            user_id = cache.get(data['token'])
+            if not user_id:
                 raise serializers.ValidationError('Token is invalid or expired')
             
+            user = CustomUser.objects.get(pk=user_id)
             data['user'] = user
-            data['token'] = token
+            print(data)
             return data
         except CustomUser.DoesNotExist:
             raise serializers.ValidationError('Invalid user')
-        except Token.DoesNotExist:
-            raise serializers.ValidationError('Invalid token')
-        except (TypeError, ValueError, OverflowError):
-            raise serializers.ValidationError('Invalid uid')
 
 
 class ResetPasswordSerializer(serializers.Serializer):
@@ -128,18 +121,21 @@ class ResetPasswordSerializer(serializers.Serializer):
         
         return password
     
+    def validate_token(self, token):
+        user_id = cache.get(token)
+        if not user_id:
+            raise serializers.ValidationError('Invalid token')
+        return user_id
+    
     @transaction.atomic
     def create(self, validated_data):
-        try:
-            token = Token.objects.get(key=validated_data['token'])
-            user = token.user
-            user.set_password(validated_data['password'])
-            token.is_used = True
-            user.save()
-            token.save()
-            return user
-        except Token.DoesNotExist:
-            raise serializers.ValidationError('Invalid token')
+        user = CustomUser.objects.select_for_update().filter(key=validated_data['token']).first()
+        if not user:
+            raise serializers.ValidationError('Could not find user')
+
+        user.set_password(validated_data['password'])
+        user.save()
+        return user
 
 
 class SendActivationTokenSerializer(serializers.Serializer):

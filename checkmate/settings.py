@@ -14,6 +14,7 @@ import os
 import environ
 from django.utils import timezone
 from pathlib import Path
+from corsheaders.defaults import default_headers
 
 env = environ.Env(
     DEBUG=(bool, False)
@@ -58,6 +59,7 @@ INSTALLED_APPS = [
     'account',
     'course_management',
     'assignment',
+    'corsheaders',
 
     # third party
     'rest_framework',
@@ -67,6 +69,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -252,3 +255,21 @@ CACHES = {
 }
 
 CACHE_TTL = 60 * 15
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+
+CORS_ALLOW_METHODS = (
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+)
+
+CORS_ALLOW_HEADERS = (
+    *default_headers,
+)

@@ -23,26 +23,29 @@ from .serializers import (
     )
 
 
-class BaseRegisterView(generics.CreateAPIView):
+class BaseRegisterationView(APIView):
     """
-    Base class for registering users into the system
+    Base view for registering a student
     """
-    permission_classes = [AllowAny]
-    authentication_classes = []
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({'message': 'Please check your email to verify your account'}, status=status.HTTP_201_CREATED)
+        user = serializer.save()
 
+        try:
+            email_manager.send_activation_email(user)
+        except Exception as e:
+            return Response({ 'message': 'Could not send activation email, please check your connection'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({ 'message': 'Please check your email to verify your account'}, status=status.HTTP_201_CREATED)
+    
 
 @extend_schema(
     responses={
         201: MessageSerializer
     }
 )
-class RegisterStudentView(BaseRegisterView):
+class RegisterStudentView(BaseRegisterationView):
     """
     Register students into the system
     """
@@ -54,7 +57,7 @@ class RegisterStudentView(BaseRegisterView):
         201: MessageSerializer
     }
 )
-class RegisterLecturerView(BaseRegisterView):
+class RegisterLecturerView(BaseRegisterationView):
     """
     Register lecturers into the system
     """
@@ -92,7 +95,9 @@ class SendActivationTokenView(APIView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            return Response({ 'message': 'Please enter a valid email address' }, status=status.HTTP_400_BAD_REQUEST)
+
         email = serializer.validated_data['email']
 
         try:
@@ -164,11 +169,6 @@ class ActivateAccountView(APIView):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                name="uid",
-                description="Base 64 encoded user id",
-                type=str
-            ),
-            OpenApiParameter(
                 name="token",
                 description="Account activation token",
                 type=str
@@ -182,13 +182,13 @@ class ActivateAccountView(APIView):
     @transaction.atomic
     def get(self, request):
         serializer = self.serializer_class(data=request.query_params)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            return Response({ 'message': 'Link is invalid or expired' }, status=status.HTTP_404_NOT_FOUND)
+
         user = serializer.validated_data['user']
-        token = serializer.validated_data['token']
+        print(user)
         user.is_active = True
-        token.is_used = True
         user.save()
-        token.save()
         return Response({ 'message': 'Account activated successfully'}, status=status.HTTP_200_OK)
 
 
@@ -230,7 +230,6 @@ class ResetPasswordView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'message': 'Password reset successful'}, status=status.HTTP_200_OK)
-
 
 
 class FetchProfileView(generics.RetrieveAPIView):
