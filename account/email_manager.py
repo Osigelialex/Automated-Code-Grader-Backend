@@ -92,7 +92,7 @@ class EmailManager:
         try:
             token = self.generate_user_token(user)
             confirmation_url = (
-                f'{self.env("BASE_URL")}/api/v1/auth/activate'
+                f'{self.env("CLIENT_URL")}/verify-token'
                 f'?token={token}'
             )
             
@@ -131,7 +131,7 @@ class EmailManager:
                 expiry=timezone.timedelta(hours=1)
             )
             password_reset_url = (
-                f'{self.env("BASE_URL")}/api/v1/auth/reset_password'
+                f'{self.env("CLIENT_URL")}/api/v1/auth/reset_password'
                 f'?token={token}'
             )
             

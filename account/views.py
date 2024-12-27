@@ -180,16 +180,22 @@ class ActivateAccountView(APIView):
         }
     )
     @transaction.atomic
-    def get(self, request):
+    def patch(self, request):
         serializer = self.serializer_class(data=request.query_params)
         if not serializer.is_valid():
             return Response({ 'message': 'Link is invalid or expired' }, status=status.HTTP_404_NOT_FOUND)
 
         user = serializer.validated_data['user']
-        print(user)
         user.is_active = True
         user.save()
-        return Response({ 'message': 'Account activated successfully'}, status=status.HTTP_200_OK)
+
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+
+        response = Response({ 'message': 'Account activated successfully'}, status=status.HTTP_200_OK)
+        response.set_cookie(key='access_token', value=access_token, httponly=True, secure=True, samesite='None')
+        response.set_cookie(key='refresh_token', value=str(refresh), httponly=True, secure=True, samesite='None')
+        return response
 
 
 class ForgottenPasswordView(APIView):
