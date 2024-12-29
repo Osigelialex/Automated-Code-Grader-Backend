@@ -131,7 +131,7 @@ class EmailManager:
                 expiry=timezone.timedelta(hours=1)
             )
             password_reset_url = (
-                f'{self.env("CLIENT_URL")}/api/v1/auth/reset_password'
+                f'{self.env("CLIENT_URL")}/change-password'
                 f'?token={token}'
             )
             

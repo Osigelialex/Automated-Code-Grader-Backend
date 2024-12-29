@@ -10,7 +10,6 @@ class CustomUserManager(BaseUserManager):
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
-        user.is_active = False
         user.save(using=self._db)
         return user
 
@@ -37,6 +36,7 @@ class CustomUser(AbstractUser):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     department = models.CharField(max_length=100)
+    email_verified = models.BooleanField(default=False)
     role = models.CharField(max_length=10, choices=Role.choices, default='student')
 
     USERNAME_FIELD = 'email'

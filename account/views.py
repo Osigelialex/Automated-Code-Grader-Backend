@@ -16,7 +16,6 @@ from .serializers import (
     LecturerRegistrationSerializer,
     ForgottenPasswordSerializer,
     LoginUserSerializer,
-    SendActivationTokenSerializer,
     ResetPasswordSerializer,
     ActivateAccountSerializer,
     ProfileDetailSerializer
@@ -27,6 +26,8 @@ class BaseRegisterationView(APIView):
     """
     Base view for registering a student
     """
+    authentication_classes = []
+
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -37,8 +38,11 @@ class BaseRegisterationView(APIView):
         except Exception as e:
             return Response({ 'message': 'Could not send activation email, please check your connection'}, status=status.HTTP_400_BAD_REQUEST)
         
-        return Response({ 'message': 'Please check your email to verify your account'}, status=status.HTTP_201_CREATED)
-    
+        # store users email in httpOnly cookie for email resending purposes
+        response = Response({'message': 'Please check your email to verify your account'}, status=status.HTTP_201_CREATED)
+        response.set_cookie(key='email', value=user.email, httponly=True, secure=True, samesite='None')
+        return response
+
 
 @extend_schema(
     responses={
@@ -70,12 +74,13 @@ class LoginView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            return Response({ 'message': 'Invalid email or password'}, status=status.HTTP_400_BAD_REQUEST)
 
         user = serializer.validated_data
-        if not user.is_active:
+        if not user.email_verified:
             email_manager.send_activation_email(user)
-            return Response({ 'message': 'Please check your email to verify your account'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({ 'message': 'Account not activated'}, status=status.HTTP_400_BAD_REQUEST)
         
         refresh = RefreshToken.for_user(user)
         access = str(refresh.access_token)
@@ -90,21 +95,17 @@ class SendActivationTokenView(APIView):
     """
     Send an account activation token to a user
     """
-    serializer_class = SendActivationTokenSerializer
     authentication_classes = []
 
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        if not serializer.is_valid():
-            return Response({ 'message': 'Please enter a valid email address' }, status=status.HTTP_400_BAD_REQUEST)
-
-        email = serializer.validated_data['email']
+        # retrieve users email from httpOnly cookie
+        email = request.COOKIES.get('email')
 
         try:
             user = CustomUser.objects.get(email=email)
 
             # verify that the user's account is not activated
-            if user.is_active == True:
+            if user.email_verified == True:
                 return Response({ 'message': 'Account already activated'}, status=status.HTTP_400_BAD_REQUEST)
 
             email_manager.send_activation_email(user)
@@ -186,7 +187,10 @@ class ActivateAccountView(APIView):
             return Response({ 'message': 'Link is invalid or expired' }, status=status.HTTP_404_NOT_FOUND)
 
         user = serializer.validated_data['user']
-        user.is_active = True
+        if user.email_verified:
+            return Response({ 'message': 'Account already activated'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.email_verified = True
         user.save()
 
         refresh = RefreshToken.for_user(user)

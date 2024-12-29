@@ -101,7 +101,6 @@ class ActivateAccountSerializer(serializers.Serializer):
             
             user = CustomUser.objects.get(pk=user_id)
             data['user'] = user
-            print(data)
             return data
         except CustomUser.DoesNotExist:
             raise serializers.ValidationError('Invalid user')
@@ -129,7 +128,7 @@ class ResetPasswordSerializer(serializers.Serializer):
     
     @transaction.atomic
     def create(self, validated_data):
-        user = CustomUser.objects.select_for_update().filter(key=validated_data['token']).first()
+        user = CustomUser.objects.select_for_update().filter(pk=validated_data['token']).first()
         if not user:
             raise serializers.ValidationError('Could not find user')
 
@@ -138,17 +137,13 @@ class ResetPasswordSerializer(serializers.Serializer):
         return user
 
 
-class SendActivationTokenSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-
-
 class LoginUserSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True, required=True)
 
     def validate(self, data):
         user = authenticate(**data)
-        if user and user.is_active:
+        if user:
             return user
         raise serializers.ValidationError('Invalid email or password')
 
