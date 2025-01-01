@@ -11,6 +11,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import InvalidToken
 from course_management.serializers import MessageSerializer
+from datetime import datetime, timedelta
 from .serializers import (
     StudentRegistrationSerializer,
     LecturerRegistrationSerializer,
@@ -83,10 +84,11 @@ class LoginView(TokenObtainPairView):
             return Response({ 'message': 'Account not activated'}, status=status.HTTP_400_BAD_REQUEST)
         
         refresh = RefreshToken.for_user(user)
-        access = str(refresh.access_token)
+        access = refresh.access_token
+        refresh['role'] = user.role
 
         response = Response({ 'message': 'Login successful'}, status=status.HTTP_200_OK)
-        response.set_cookie(key='access_token', value=access, httponly=True, secure=True, samesite='None')
+        response.set_cookie(key='access_token', value=str(access), httponly=True, secure=True, samesite='None')
         response.set_cookie(key='refresh_token', value=str(refresh), httponly=True, secure=True, samesite='None')
         return response
 
@@ -194,10 +196,11 @@ class ActivateAccountView(APIView):
         user.save()
 
         refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
+        access_token = refresh.access_token
+        refresh['role'] = user.role
 
         response = Response({ 'message': 'Account activated successfully'}, status=status.HTTP_200_OK)
-        response.set_cookie(key='access_token', value=access_token, httponly=True, secure=True, samesite='None')
+        response.set_cookie(key='access_token', value=str(access_token), httponly=True, secure=True, samesite='None')
         response.set_cookie(key='refresh_token', value=str(refresh), httponly=True, secure=True, samesite='None')
         return response
 
