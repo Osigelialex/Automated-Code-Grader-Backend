@@ -31,8 +31,8 @@ class Course(models.Model):
         if not self.course_join_code:
             self.course_join_code = self.generate_course_join_code()
 
-        # Ensure that the course join code is unique
-        while Course.objects.filter(course_join_code=self.course_join_code).exists():
-            self.course_join_code = self.generate_course_join_code()
+            # Ensure that the course join code is unique
+            while Course.objects.filter(course_join_code=self.course_join_code).exists():
+                self.course_join_code = self.generate_course_join_code()
         
         return super().save(*args, **kwargs)
