@@ -4,7 +4,8 @@ from .views import (
     JoinCourseView,
     StudentCourseListView,
     UnenrollView,
-    CourseListCreateView
+    CourseListCreateView,
+    CourseDetailView
 )
 
 
@@ -15,4 +16,5 @@ urlpatterns = [
     path('courses/<str:pk>/unenroll', UnenrollView.as_view(), name='unenroll'),
     path('courses/<str:pk>/assignments/create', AssignmentCreateView.as_view(), name='create-assignment'),
     path('courses/<str:pk>/assignments', AssignmentListView.as_view(), name='list-course-assignment'),
+    path('courses/<str:pk>', CourseDetailView.as_view(), name='course-detail')
 ]

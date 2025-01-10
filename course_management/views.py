@@ -2,6 +2,7 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from account.permissions import IsLecturerPermission, IsStudentPermission
+from rest_framework.permissions import IsAuthenticated
 from .serializers import CourseSerializer, JoinCourseSerializer, MessageSerializer, CourseListSerializer
 from .models import Course
 from drf_spectacular.utils import extend_schema
@@ -24,6 +25,15 @@ class CourseListCreateView(generics.ListCreateAPIView):
         serializer.validated_data['lecturer'] = request.user
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class CourseDetailView(generics.RetrieveAPIView):
+    """
+    Retrieve, update or delete a course
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = CourseSerializer
+    queryset = Course.objects.all()
 
 
 class JoinCourseView(APIView):

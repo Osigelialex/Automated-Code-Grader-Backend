@@ -1,6 +1,6 @@
 from rest_framework import generics
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from .models import CustomUser
@@ -11,7 +11,6 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import InvalidToken
 from course_management.serializers import MessageSerializer
-from datetime import datetime, timedelta
 from .serializers import (
     StudentRegistrationSerializer,
     LecturerRegistrationSerializer,
@@ -249,7 +248,7 @@ class FetchProfileView(generics.RetrieveAPIView):
     """
     Fetches the profile of the currently logged in user
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     serializer_class = ProfileDetailSerializer
 
     def get_object(self):
