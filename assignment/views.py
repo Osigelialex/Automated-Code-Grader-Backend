@@ -13,7 +13,7 @@ from django.utils import timezone
 from .filters import AssignmentFilter
 import google.generativeai as genai
 from .service import code_execution_service
-import logging, environ, logging
+import logging, environ, logging, json
 from .serializers import (
     AssignmentSerializer,
     AssignmentListSerializer,
@@ -156,7 +156,7 @@ class AssignmentSubmissionView(APIView):
 
         # check if code is already in cache
         if cache.get(serializer.validated_data['code']):
-            return Response(cache.get(serializer.validated_data['code']), status=status.HTTP_200_OK)
+            return Response(json.loads(cache.get(serializer.validated_data['code'])), status=status.HTTP_200_OK)
 
         # Extract all the test cases created for the assignment and represent them
         # in an input-output format for easy validation by the code execution service
@@ -164,7 +164,10 @@ class AssignmentSubmissionView(APIView):
         test_cases = [{"input": tc["input"], "output": tc["output"]} for tc in test_cases]
 
         # retrieve tokens needed to get the assignment submission results from the judge0 API
-        tokens = code_execution_service.submit_code(serializer.validated_data['code'], assignment.language_id,  test_cases)
+        try:
+            tokens = code_execution_service.submit_code(serializer.validated_data['code'], assignment.language_id,  test_cases)
+        except Exception as e:
+            return Response({ 'message': 'Could not execute code, please try again' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # using the submission token to get the assignment submission result from judge0 API
         submission_results = code_execution_service.get_submission_result(tokens)
@@ -190,11 +193,17 @@ class AssignmentSubmissionView(APIView):
             results=submission_results
         )
 
-        # add submission resutls to the response
-        submission_results['submission_id'] = submission.id;
+        # Convert UUID to string before adding to submission_results
+        submission_results['submission_id'] = str(submission.id)
 
-        # store the submission results in cache for 5 minutes
-        cache.set(serializer.validated_data['code'], repr(submission_results), 300)
+        cache_data = {
+            'submission_id': str(submission.id),
+            'score': score,
+            'submission_result': submission_results['submission_result']
+        }
+
+        # store the submission results in cache for 10 minutes
+        cache.set(serializer.validated_data['code'], json.dumps(cache_data), 600)
 
         return Response(submission_results, status=status.HTTP_200_OK)
 
