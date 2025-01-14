@@ -24,7 +24,7 @@ from .serializers import (
     AssignmentResultDataSerializer,
     FeedbackRatingSerializer,
     FeedbackListSerializer,
-    ProgrammingLanguageSerializer
+    ProgrammingLanguageSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -256,7 +256,7 @@ class FeedbackGenerationView(APIView):
         Feedback Principles:
         - Constructive and encouraging tone
         - Preserve student's problem-solving ownership
-        - Keep feedback concise, focused and short
+        - Keep feedback concise, focused and very short
 
         Assignment Description: {assignment.description}
         Programming Language: {assignment.programming_language}
@@ -266,7 +266,7 @@ class FeedbackGenerationView(APIView):
         try:
             response = self.model.generate_content(prompt)
         except Exception as e:
-            return Response({ 'error': 'CheckMate is unavailable right now' })
+            return Response({ 'error': 'CheckMate AI is unavailable right now' })
 
         # store response in database
         feedback = Feedback(
