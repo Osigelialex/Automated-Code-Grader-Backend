@@ -300,6 +300,29 @@ class RateFeedbackView(APIView):
         return Response({ 'message': 'Thank you! Feedback rated successfully' }, status=status.HTTP_200_OK)
 
 
+class RetrieveProgressView(APIView):
+    """
+    This view retrieves a students progress
+    """
+    permission_classes = [IsStudentPermission]
+
+    def get(self, request, pk):
+        assignment = get_object_or_404(Assignment, pk=pk)
+        submission = Submission.objects.filter(
+            assignment=assignment,
+            student=request.user,
+            is_best=True
+        ).order_by('-submitted_at').first()
+
+        if not submission:
+            return Response({ 'message': 'No submissions found' }, status=status.HTTP_200_OK)
+
+        return Response({
+            'code': submission.code,
+            'solved': submission.score == 100
+        }, status=status.HTTP_200_OK)
+
+
 class FeedbackListView(generics.ListAPIView):
     """
     API endpoint for retrieving all feedbacks

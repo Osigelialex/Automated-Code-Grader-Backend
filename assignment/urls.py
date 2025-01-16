@@ -9,18 +9,20 @@ from .views import (
     RateFeedbackView,
     FeedbackListView,
     PublishAssignmentView,
-    RetrieveProgrammingLanguages
+    RetrieveProgrammingLanguages,
+    RetrieveProgressView
     )
 
 urlpatterns = [
-    path('assignments/<str:pk>', AssignmentDetailView.as_view(), name='assignment-detail'),
-    path('assignments/<str:pk>/submit', AssignmentSubmissionView.as_view(), name='assignment-submit'),
-    path('assignments/<str:pk>/submissions', StudentSubmissionListView.as_view(), name='student-submissions'),
-    path('assignments/<str:pk>/publish', PublishAssignmentView.as_view(), name='publish-assignment'),
-    path('submissions/<str:pk>', SubmissionDetailView.as_view(), name='submission-detail'),
-    path('assignments/<str:pk>/results', AssignmentResultData.as_view(), name='assignment-result'),
-    path('submissions/<str:pk>/feedback', FeedbackGenerationView.as_view(), name='generate-feedback'),
-    path('feedback/<str:pk>/rate', RateFeedbackView.as_view(), name='rate-feedback'),
+    path('assignments/<uuid:pk>', AssignmentDetailView.as_view(), name='assignment-detail'),
+    path('assignments/<uuid:pk>/submit', AssignmentSubmissionView.as_view(), name='assignment-submit'),
+    path('assignments/<uuid:pk>/submissions', StudentSubmissionListView.as_view(), name='student-submissions'),
+    path('assignments/<uuid:pk>/publish', PublishAssignmentView.as_view(), name='publish-assignment'),
+    path('submissions/<uuid:pk>', SubmissionDetailView.as_view(), name='submission-detail'),
+    path('assignments/<uuid:pk>/results', AssignmentResultData.as_view(), name='assignment-result'),
+    path('submissions/<uuid:pk>/feedback', FeedbackGenerationView.as_view(), name='generate-feedback'),
+    path('feedback/<uuid:pk>/rate', RateFeedbackView.as_view(), name='rate-feedback'),
     path('feedback', FeedbackListView.as_view(), name='feedback-list'),
-    path('languages', RetrieveProgrammingLanguages.as_view(), name='programming-languages')
+    path('languages', RetrieveProgrammingLanguages.as_view(), name='programming-languages'),
+    path('assignments/<uuid:pk>/progress', RetrieveProgressView.as_view(), name='fetch-progress')
 ]
