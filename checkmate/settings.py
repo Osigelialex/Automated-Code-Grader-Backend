@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'course_management',
     'assignment',
     'corsheaders',
+    'celery',
 
     # third party
     'rest_framework',
@@ -273,3 +274,7 @@ CORS_ALLOW_METHODS = (
 CORS_ALLOW_HEADERS = (
     *default_headers,
 )
+
+# Celery settings
+CELERY_BROKER_URL = "redis://localhost:6379"
+CELERY_RESULT_BACKEND = "redis://localhost:6379"
