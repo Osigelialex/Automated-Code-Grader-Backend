@@ -24,7 +24,7 @@ class EmailManager:
         self.from_email = settings.DEFAULT_FROM_EMAIL
         self.token_expiry = timezone.timedelta(minutes=15)
     
-    def generate_user_token(self, user, expiry: Optional[timezone.timedelta] = None) -> str:
+    def generate_user_token(self, user_id: str, expiry: Optional[timezone.timedelta] = None) -> str:
         """
         Generate a secure token for user verification purposes.
         
@@ -37,10 +37,10 @@ class EmailManager:
         """
         try:
             token = get_random_string(length=64)
-            cache.set(token, user.id, timeout=(expiry or self.token_expiry).seconds)
+            cache.set(token, user_id, timeout=(expiry or self.token_expiry).seconds)
             return token
         except Exception as e:
-            logger.error(f"Token generation failed for user {user.id}: {str(e)}")
+            logger.error(f"Token generation failed for user {user_id}: {str(e)}")
             raise
     
     def send_email(
@@ -79,7 +79,7 @@ class EmailManager:
             raise
 
     @transaction.atomic
-    def send_activation_email(self, user) -> None:
+    def send_activation_email(self, user_id: str, first_name: str, email: str) -> None:
         """
         Send account activation email to user.
         
@@ -90,14 +90,14 @@ class EmailManager:
             Exception: If email sending fails
         """
         try:
-            token = self.generate_user_token(user)
+            token = self.generate_user_token(user_id)
             confirmation_url = (
                 f'{self.env("CLIENT_URL")}/verify-token'
                 f'?token={token}'
             )
             
             context = {
-                'user': user,
+                'first_name': first_name,
                 'confirmation_url': confirmation_url,
                 'year': timezone.now().year
             }
@@ -106,19 +106,19 @@ class EmailManager:
                 template_path='email_confirmation.html',
                 context=context,
                 subject='Activate Your Checkmate Account',
-                to_email=user.email
+                to_email=email
             )
 
             logger.info(f'Confirmation url: {confirmation_url}')
         except Exception as e:
-            logger.error(f"Activation email failed for user {user.id}: {str(e)}")
+            logger.error(f"Activation email failed for user {user_id}: {str(e)}")
             raise
 
     @transaction.atomic
-    def send_password_reset_email(self, user) -> None:
+    def send_password_reset_email(self, user_id: str, first_name: str, email: str) -> None:
         """
         Send password reset email to user.
-        
+
         Args:
             user: User object to send password reset email to
             
@@ -127,7 +127,7 @@ class EmailManager:
         """
         try:
             token = self.generate_user_token(
-                user,
+                user_id,
                 expiry=timezone.timedelta(hours=1)
             )
             password_reset_url = (
@@ -136,7 +136,7 @@ class EmailManager:
             )
             
             context = {
-                'user': user,
+                'first_name': first_name,
                 'password_reset_url': password_reset_url,
                 'year': timezone.now().year
             }
@@ -145,13 +145,13 @@ class EmailManager:
                 template_path='password_reset.html',
                 context=context,
                 subject='Reset your Checkmate password',
-                to_email=user.email
+                to_email=email
             )
 
             logger.info(f'Password reset url: {password_reset_url}')
 
         except Exception as e:
-            logger.error(f"Password reset email failed for user {user.id}: {str(e)}")
+            logger.error(f"Password reset email failed for user {user_id}: {str(e)}")
             raise
 
 email_manager = EmailManager()

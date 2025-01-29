@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import CustomUser
 from django.db import transaction
-from .email_manager import email_manager
+from .tasks import send_activation_email, send_password_reset_email
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -33,10 +33,7 @@ class BaseRegisterationView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        try:
-            email_manager.send_activation_email(user)
-        except Exception as e:
-            return Response({ 'message': 'Could not send activation email, please check your connection'}, status=status.HTTP_400_BAD_REQUEST)
+        send_activation_email.delay(user.id, user.first_name, user.email)
         
         # store users email in httpOnly cookie for email resending purposes
         response = Response({'message': 'Please check your email to verify your account'}, status=status.HTTP_201_CREATED)
@@ -78,8 +75,9 @@ class LoginView(TokenObtainPairView):
             return Response({ 'message': 'Invalid email or password'}, status=status.HTTP_400_BAD_REQUEST)
 
         user = serializer.validated_data
+
         if not user.email_verified:
-            email_manager.send_activation_email(user)
+            send_activation_email.delay(user.id, user.first_name, user.email)
             return Response({ 'message': 'Account not activated'}, status=status.HTTP_400_BAD_REQUEST)
         
         refresh = RefreshToken.for_user(user)
@@ -109,7 +107,7 @@ class SendActivationTokenView(APIView):
             if user.email_verified == True:
                 return Response({ 'message': 'Account already activated'}, status=status.HTTP_400_BAD_REQUEST)
 
-            email_manager.send_activation_email(user)
+            send_activation_email.delay(user.id, user.first_name, user.email)
             return Response({ 'message': 'Please check your email to verify your account'}, status=status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
             return Response({ 'message': 'No user with that email address' }, status=status.HTTP_404_NOT_FOUND)
@@ -218,7 +216,7 @@ class ForgottenPasswordView(APIView):
 
         try:
             user = CustomUser.objects.get(email=email)
-            email_manager.send_password_reset_email(user)
+            send_password_reset_email.delay(user.id, user.first_name, user.email)
             return Response({ 'message': f'Password reset instructions sent to {email}'}, status=status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
             return Response({ 'message': 'No user with that email address'}, status=status.HTTP_404_NOT_FOUND)

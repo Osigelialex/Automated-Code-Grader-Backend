@@ -60,7 +60,6 @@ INSTALLED_APPS = [
     'course_management',
     'assignment',
     'corsheaders',
-    'celery',
 
     # third party
     'rest_framework',
@@ -276,5 +275,7 @@ CORS_ALLOW_HEADERS = (
 )
 
 # Celery settings
-CELERY_BROKER_URL = "redis://localhost:6379"
-CELERY_RESULT_BACKEND = "redis://localhost:6379"
+CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_ACKS_LATE = True
