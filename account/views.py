@@ -75,16 +75,15 @@ class LoginView(TokenObtainPairView):
             return Response({ 'message': 'Invalid email or password'}, status=status.HTTP_400_BAD_REQUEST)
 
         user = serializer.validated_data
-
         if not user.email_verified:
             send_activation_email.delay(user.id, user.first_name, user.email)
             return Response({ 'message': 'Account not activated'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
         refresh['role'] = user.role
 
-        response = Response({ 'message': 'Login successful'}, status=status.HTTP_200_OK)
+        response = Response({ 'message': 'Login successful', 'role': user.role}, status=status.HTTP_200_OK)
         response.set_cookie(key='access_token', value=str(access), httponly=True, secure=True, samesite='None')
         response.set_cookie(key='refresh_token', value=str(refresh), httponly=True, secure=True, samesite='None')
         return response

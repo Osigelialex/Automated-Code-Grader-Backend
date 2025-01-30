@@ -32,7 +32,7 @@ class CourseDetailView(generics.RetrieveAPIView):
     Retrieve, update or delete a course
     """
     permission_classes = [IsAuthenticated]
-    serializer_class = CourseSerializer
+    serializer_class = CourseListSerializer
     queryset = Course.objects.all()
 
 

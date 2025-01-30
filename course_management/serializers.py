@@ -19,11 +19,9 @@ class CourseListSerializer(serializers.ModelSerializer):
 
 
 class CourseSerializer(serializers.ModelSerializer):
-    lecturer = LecturerSerializer()
-
     class Meta:
         model = Course
-        fields = ['id', 'title', 'description', 'course_code', 'course_units', 'course_join_code', 'lecturer']
+        fields = ['id', 'title', 'description', 'course_code', 'course_units', 'course_join_code']
         read_only_fields = ['course_join_code', 'id', 'lecturer']
 
     def validate_course_units(self, value):
