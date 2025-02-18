@@ -160,6 +160,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
+    "PAGE_SIZE": 10,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         "account.authentication.CookieJWTAuthentication",
     ),
@@ -259,6 +261,7 @@ CACHE_TTL = 60 * 15
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://127.0.0.1:3000"
 ]
 
 CORS_ALLOW_METHODS = (

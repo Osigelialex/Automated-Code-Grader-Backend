@@ -18,7 +18,6 @@ class CodeExecutionService:
         }
 
     def submit_code(self, source_code: str, language_id: int, test_cases: List[Dict[str, any]]) -> dict:
-        """Perform batch submission to Judge0"""
         try:
             url = f"{self.BASE_URL}/submissions/batch?base64_encoded=true"
             payload = {
@@ -33,10 +32,23 @@ class CodeExecutionService:
                 ]
             }
 
-            response = requests.post(url, headers=self.headers, json=payload)
-            return response.json()
+            response = requests.post(url, headers=self.headers, json=payload, timeout=30)
+            response.raise_for_status()
+            
+            result = response.json()
+            if not result:
+                raise ValueError("Empty response from Judge0")
+                
+            return result
+
+        except requests.exceptions.Timeout:
+            logger.error("Judge0 API timeout")
+            raise Exception("Code execution service timeout")
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error submitting code to Judge0: {str(e)}")
+            logger.error(f"Judge0 API error: {str(e)}")
+            raise Exception("Code execution service error")
+        except Exception as e:
+            logger.error(f"Unexpected error in submit_code: {str(e)}")
             raise
 
     def get_submission_result(self, tokens: List[Dict[str, str]]) -> dict:

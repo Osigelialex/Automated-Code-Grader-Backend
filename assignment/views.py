@@ -107,7 +107,7 @@ class AssignmentDetailView(generics.RetrieveAPIView):
         return Response(assignment_data)
 
 
-class StudentSubmissionListView(APIView):
+class StudentSubmissionListView(generics.ListAPIView):
     """
     API endpoint for retrieving all submissions for an assignment by a student
 
@@ -117,10 +117,8 @@ class StudentSubmissionListView(APIView):
     serializer_class = SubmissionSerializer
     permission_classes = [IsStudentPermission]
 
-    def get(self, request, pk):
-        submissions = Submission.objects.filter(student=request.user, assignment=pk)
-        serializer = self.serializer_class(submissions, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        return Submission.objects.filter(student=self.request.user, assignment=self.kwargs['pk'])
 
 
 class SubmissionDetailView(generics.RetrieveAPIView):
@@ -149,7 +147,18 @@ class AssignmentSubmissionView(APIView):
     def post(self, request, pk):
         assignment = get_object_or_404(Assignment, pk=pk)
         serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
+
+        if not serializer.is_valid():
+            return Response(
+                {"message": "Invalid data", "errors": serializer.errors}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if assignment.deadline < timezone.now():
+            return Response(
+                {"message": "Deadline exceeded for this assignment"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if assignment.deadline < timezone.now():
             return Response({ 'message': 'Deadline exceeded for this assignment' })
@@ -205,7 +214,14 @@ class AssignmentSubmissionView(APIView):
         # store the submission results in cache for 10 minutes
         cache.set(serializer.validated_data['code'], json.dumps(cache_data), 600)
 
-        return Response(submission_results, status=status.HTTP_200_OK)
+        # format response to be similar to cached data
+        response_data = {
+            'submission_id': str(submission.id),
+            'score': score,
+            'submission_result': submission_results['submission_result']
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class AssignmentResultData(generics.ListAPIView):
