@@ -7,6 +7,7 @@ api_v1_patterns = [
     path('auth/', include('account.urls')),
     path('', include('course_management.urls')),
     path('', include('assignment.urls')),
+    path('', include('analytics.urls')),
 ]
 
 schema_patterns = [

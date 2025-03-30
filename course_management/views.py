@@ -27,6 +27,17 @@ class CourseListCreateView(generics.ListCreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+class CourseEditView(generics.UpdateAPIView):
+    permission_classes = [IsLecturerPermission]
+    serializer_class = CourseSerializer
+    queryset = Course.objects.all()
+
+
+class CourseDeleteView(generics.DestroyAPIView):
+    permission_classes = [IsLecturerPermission]
+    queryset = Course.objects.all()
+
+
 class CourseDetailView(generics.RetrieveAPIView):
     """
     Retrieve, update or delete a course

@@ -52,6 +52,14 @@ class AssignmentCreateView(APIView):
             return Response({'message': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
+class TeacherAssignmentsList(generics.ListAPIView):
+    serializer_class = AssignmentListSerializer
+    permission_classes = [IsLecturerPermission]
+
+    def get_queryset(self):
+        return Assignment.objects.filter(created_by=self.request.user)
+
+
 class PublishAssignmentView(APIView):
     """
     API endpoint for publishing an assignment
@@ -132,12 +140,19 @@ class SubmissionDetailView(generics.RetrieveAPIView):
     lookup_field = 'pk'
 
 
+@extend_schema(
+    tags=['assignments'],
+    parameters=[
+        OpenApiParameter(name='is_test', description='Mark as true to make submissions test submission', required=False, type=bool)
+    ]
+)
 class AssignmentSubmissionView(APIView):
     """
     API endpoint for making a code submission for an assignment
 
     This view handles the submission of code for an assignment by a student.
-    It calls the code execution service to run the code against the test cases
+    It calls the code execution service to run the code against the test cases.
+    If the submission is a test submission, it isn't saved to the database
     """
     serializer_class = AssignmentSubmissionSerializer
     permission_classes = [IsStudentPermission]
@@ -193,8 +208,20 @@ class AssignmentSubmissionView(APIView):
         # include score in the response
         submission_results['score'] = score
 
+        # cache data for 10 minutes
+        cache_data = {
+            'score': score,
+            'submission_result': submission_results['submission_result']
+        }
+
+        cache.set(serializer.validated_data['code'], json.dumps(cache_data), 600)
+
+        # if the submission is a test submission, return the submission results
+        if request.query_params.get('is_test') == 'true':
+            return Response(submission_results, status=status.HTTP_200_OK)
+
         # store submission in database
-        submission = Submission.objects.create(
+        Submission.objects.create(
             assignment=assignment,
             student=request.user,
             code=serializer.validated_data['code'],
@@ -202,21 +229,7 @@ class AssignmentSubmissionView(APIView):
             results=submission_results
         )
 
-        # Convert UUID to string before adding to submission_results
-        submission_results['submission_id'] = str(submission.id)
-
-        cache_data = {
-            'submission_id': str(submission.id),
-            'score': score,
-            'submission_result': submission_results['submission_result']
-        }
-
-        # store the submission results in cache for 10 minutes
-        cache.set(serializer.validated_data['code'], json.dumps(cache_data), 600)
-
-        # format response to be similar to cached data
         response_data = {
-            'submission_id': str(submission.id),
             'score': score,
             'submission_result': submission_results['submission_result']
         }
@@ -238,6 +251,50 @@ class AssignmentResultData(generics.ListAPIView):
         return Submission.objects.filter(assignment=self.kwargs['pk'], is_best=True)
 
 
+class TestRunFeedbackGenerationView(APIView):
+    """
+    API endpoint for generating personalized feedback for students during a test submission
+    """
+    permission_classes = [IsStudentPermission]
+    throttle_scope = 'feedback'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        genai.configure(api_key=env('GEMINI_API_KEY'))
+        self.model = genai.GenerativeModel('gemini-1.5-pro')
+    
+    def post(self, request, *args, **kwargs):
+        code = request.data['code']
+        description = request.data['description']
+        student = request.user
+
+        prompt = f"""
+        Role: Programming Assistant providing constructive student code feedback
+
+        Key Objectives:
+        - Evaluate code correctness without giving direct solutions
+        - Assess code style and best practices
+        - Provide actionable improvement suggestions
+        - Offer positive reinforcement
+
+        Feedback Principles:
+        - Constructive and encouraging tone
+        - Preserve student's problem-solving ownership
+        - Keep feedback concise, focused and very short
+
+        Assignment Description: {description}
+        Student Code Submission: {code}
+        Student Name: {student.first_name}
+        """
+
+        try:
+            response = self.model.generate_content(prompt)
+        except Exception as e:
+            return Response({ 'error': 'CheckMate AI is unavailable right now' })
+
+        return Response({ 'feedback': response.text }, status=status.HTTP_200_OK)
+
+
 class FeedbackGenerationView(APIView):
     """
     API endpoint for generating personalized feedback for a students submission
@@ -251,7 +308,7 @@ class FeedbackGenerationView(APIView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         genai.configure(api_key=env('GEMINI_API_KEY'))
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-1.5-pro')
     
     def post(self, request, pk):
         if cache.get(f'feedback_{pk}'):
@@ -275,7 +332,6 @@ class FeedbackGenerationView(APIView):
         - Keep feedback concise, focused and very short
 
         Assignment Description: {assignment.description}
-        Programming Language: {assignment.programming_language}
         Student Code Submission: {submission.code}
         Student Name: {student_name}
         """

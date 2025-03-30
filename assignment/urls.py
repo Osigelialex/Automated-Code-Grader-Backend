@@ -10,7 +10,9 @@ from .views import (
     FeedbackListView,
     PublishAssignmentView,
     RetrieveProgrammingLanguages,
-    RetrieveProgressView
+    RetrieveProgressView,
+    TestRunFeedbackGenerationView,
+    TeacherAssignmentsList
     )
 
 urlpatterns = [
@@ -24,5 +26,7 @@ urlpatterns = [
     path('feedback/<uuid:pk>/rate', RateFeedbackView.as_view(), name='rate-feedback'),
     path('feedback', FeedbackListView.as_view(), name='feedback-list'),
     path('languages', RetrieveProgrammingLanguages.as_view(), name='programming-languages'),
-    path('assignments/<uuid:pk>/progress', RetrieveProgressView.as_view(), name='fetch-progress')
+    path('assignments/<uuid:pk>/progress', RetrieveProgressView.as_view(), name='fetch-progress'),
+    path('feedback/test-run', TestRunFeedbackGenerationView.as_view(), name='test-run-feedback'),
+    path('assignments/teacher', TeacherAssignmentsList.as_view(), name='teacher-assignments-list')
 ]

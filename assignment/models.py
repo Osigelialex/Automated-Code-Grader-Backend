@@ -18,6 +18,7 @@ class Assignment(models.Model):
     programming_language = models.CharField(null=True)
     language_id = models.IntegerField()
     is_draft = models.BooleanField(default=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=True, related_name='assignments')
 
     def __str__(self):
         return self.title
@@ -39,7 +40,7 @@ class TestCase(models.Model):
 
 class Submission(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='submissions')
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     code = models.TextField()
     score = models.FloatField()

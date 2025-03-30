@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'account',
     'course_management',
     'assignment',
+    'analytics',
     'corsheaders',
 
     # third party
