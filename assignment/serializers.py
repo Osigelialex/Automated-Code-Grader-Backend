@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class TestCaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestCase
-        fields = ['input', 'output']
+        fields = ['input', 'output', 'is_hidden']
 
     def validate_input(self, value):
         if not isinstance(value, str):
@@ -65,7 +65,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assignment
         fields = ['title', 'description', 'deadline',
-                  'max_score', 'language_id',
+                  'max_score', 'language_id', 'programming_language',
                   'course', 'test_cases']
         read_only_fields = ['course']
 

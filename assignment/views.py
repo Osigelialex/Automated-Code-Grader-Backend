@@ -13,7 +13,7 @@ from django.utils import timezone
 from .filters import AssignmentFilter
 import google.generativeai as genai
 from .service import code_execution_service
-import logging, environ, logging, json
+import logging, environ, logging, json, time
 from .serializers import (
     AssignmentSerializer,
     AssignmentListSerializer,
@@ -46,7 +46,7 @@ class AssignmentCreateView(APIView):
             data = request.data.copy()
             serializer = self.serializer_class(data=data)
             serializer.is_valid(raise_exception=True)
-            serializer.save(course=course)
+            serializer.save(course=course, created_by=self.request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Course.DoesNotExist:
             return Response({'message': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -57,7 +57,7 @@ class TeacherAssignmentsList(generics.ListAPIView):
     permission_classes = [IsLecturerPermission]
 
     def get_queryset(self):
-        return Assignment.objects.filter(created_by=self.request.user)
+        return Assignment.objects.filter(created_by=self.request.user).order_by('-created_at')
 
 
 class PublishAssignmentView(APIView):
@@ -93,7 +93,7 @@ class AssignmentListView(generics.ListAPIView):
     filterset_class = AssignmentFilter
 
     def get_queryset(self):
-        return Assignment.objects.filter(course=self.kwargs['pk'])
+        return Assignment.objects.filter(course=self.kwargs['pk'], is_draft=False).order_by('-created_at')
 
 
 class AssignmentDetailView(generics.RetrieveAPIView):
@@ -175,28 +175,49 @@ class AssignmentSubmissionView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if assignment.deadline < timezone.now():
-            return Response({ 'message': 'Deadline exceeded for this assignment' })
-
         # check if code is already in cache
         if cache.get(serializer.validated_data['code']):
             return Response(json.loads(cache.get(serializer.validated_data['code'])), status=status.HTTP_200_OK)
 
-        # Extract all the test cases created for the assignment and represent them
-        # in an input-output format for easy validation by the code execution service
+        # Extract all the test cases created for the assignment
         test_cases = assignment.test_cases.values()
         test_cases = [{"input": tc["input"], "output": tc["output"]} for tc in test_cases]
 
-        # retrieve tokens needed to get the assignment submission results from the judge0 API
+        # retrieve tokens for code execution
         try:
-            tokens = code_execution_service.submit_code(serializer.validated_data['code'], assignment.language_id,  test_cases)
+            tokens = code_execution_service.submit_code(serializer.validated_data['code'], assignment.language_id, test_cases)
         except Exception as e:
-            return Response({ 'message': 'Could not execute code, please try again' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message': f'Could not execute code, please try again: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # using the submission token to get the assignment submission result from judge0 API
-        submission_results = code_execution_service.get_submission_result(tokens)
+        # Wait for all submissions to be processed
+        max_attempts = 10  # Maximum polling attempts
+        polling_interval = 1  # Starting polling interval in seconds
+        
+        for attempt in range(max_attempts):
+            # get submission results
+            submission_results = code_execution_service.get_submission_result(tokens)
+            
+            # Check if any submission is still processing
+            still_processing = any(
+                result["status"] == "Processing" for result in submission_results["submission_result"]
+            )
+            
+            if not still_processing:
+                break
+                
+            # Exponential backoff for polling
+            if attempt < max_attempts - 1:  # Don't sleep on the last attempt
+                time.sleep(polling_interval)
+                polling_interval = min(polling_interval * 1.5, 5)  # Cap at 5 seconds
+        
+        # If still processing after max attempts, return an error
+        if any(result["status"] == "Processing" for result in submission_results["submission_result"]):
+            return Response(
+                {"message": "Code execution is taking longer than expected. Please try again."},
+                status=status.HTTP_408_REQUEST_TIMEOUT
+            )
 
-        # calculate final grade by using the number of passed test cases
+        # calculate final grade
         test_case_count = len(test_cases)
         accepted_count = 0
         for result in submission_results["submission_result"]:
@@ -205,23 +226,21 @@ class AssignmentSubmissionView(APIView):
 
         score = (accepted_count / test_case_count) * assignment.max_score
 
-        # include score in the response
-        submission_results['score'] = score
-
-        # cache data for 10 minutes
-        cache_data = {
+        # prepare response data
+        response_data = {
             'score': score,
             'submission_result': submission_results['submission_result']
         }
 
-        cache.set(serializer.validated_data['code'], json.dumps(cache_data), 600)
+        # cache data for 10 minutes
+        cache.set(serializer.validated_data['code'], json.dumps(response_data), 600)
 
         # if the submission is a test submission, return the submission results
         if request.query_params.get('is_test') == 'true':
-            return Response(submission_results, status=status.HTTP_200_OK)
+            return Response(response_data, status=status.HTTP_200_OK)
 
         # store submission in database
-        Submission.objects.create(
+        submission = Submission.objects.create(
             assignment=assignment,
             student=request.user,
             code=serializer.validated_data['code'],
@@ -229,10 +248,7 @@ class AssignmentSubmissionView(APIView):
             results=submission_results
         )
 
-        response_data = {
-            'score': score,
-            'submission_result': submission_results['submission_result']
-        }
+        response_data['submission_id'] = submission.id
 
         return Response(response_data, status=status.HTTP_200_OK)
 
@@ -411,6 +427,7 @@ class RetrieveProgrammingLanguages(generics.ListAPIView):
     """
     serializer_class = ProgrammingLanguageSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         try:
