@@ -259,7 +259,8 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://checkmate-theta.vercel.app"
+    "https://checkmate-theta.vercel.app",
+    "https://checkmate-api.vercel.app"
 ]
 
 CORS_ALLOW_METHODS = (
