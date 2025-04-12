@@ -175,9 +175,16 @@ class AssignmentSubmissionView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # check if code is already in cache
-        if cache.get(serializer.validated_data['code']):
-            return Response(json.loads(cache.get(serializer.validated_data['code'])), status=status.HTTP_200_OK)
+        is_test = request.query_params.get('is_test') == 'true'
+        
+        # Create different cache keys for test vs actual submissions
+        code = serializer.validated_data['code']
+        cache_key = f"test_{code}" if is_test else f"submission_{code}"
+
+        # Check if result is already in cache
+        cached_result = cache.get(cache_key)
+        if cached_result:
+            return Response(json.loads(cached_result), status=status.HTTP_200_OK)
 
         # Extract all the test cases created for the assignment
         test_cases = assignment.test_cases.values()
@@ -185,13 +192,13 @@ class AssignmentSubmissionView(APIView):
 
         # retrieve tokens for code execution
         try:
-            tokens = code_execution_service.submit_code(serializer.validated_data['code'], assignment.language_id, test_cases)
+            tokens = code_execution_service.submit_code(code, assignment.language_id, test_cases)
         except Exception as e:
             return Response({'message': f'Could not execute code, please try again: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Wait for all submissions to be processed
-        max_attempts = 10  # Maximum polling attempts
-        polling_interval = 1  # Starting polling interval in seconds
+        max_attempts = 10
+        polling_interval = 1 
         
         for attempt in range(max_attempts):
             # get submission results
@@ -206,7 +213,7 @@ class AssignmentSubmissionView(APIView):
                 break
                 
             # Exponential backoff for polling
-            if attempt < max_attempts - 1:  # Don't sleep on the last attempt
+            if attempt < max_attempts - 1:
                 time.sleep(polling_interval)
                 polling_interval = min(polling_interval * 1.5, 5)  # Cap at 5 seconds
         
@@ -232,23 +239,26 @@ class AssignmentSubmissionView(APIView):
             'submission_result': submission_results['submission_result']
         }
 
-        # cache data for 10 minutes
-        cache.set(serializer.validated_data['code'], json.dumps(response_data), 600)
-
-        # if the submission is a test submission, return the submission results
-        if request.query_params.get('is_test') == 'true':
+        # if the submission is a test submission, cache and return the results
+        if is_test:
+            # Cache test submission data for 10 minutes
+            cache.set(cache_key, json.dumps(response_data), 600)
             return Response(response_data, status=status.HTTP_200_OK)
 
-        # store submission in database
+        # For actual submissions, store in database
         submission = Submission.objects.create(
             assignment=assignment,
             student=request.user,
-            code=serializer.validated_data['code'],
+            code=code,
             score=score,
             results=submission_results
         )
 
-        response_data['submission_id'] = submission.id
+        # Add submission_id to response data for actual submissions
+        response_data['submission_id'] = str(submission.id)
+        
+        # Cache actual submission data with submission_id for 10 minutes
+        cache.set(cache_key, json.dumps(response_data), 600)
 
         return Response(response_data, status=status.HTTP_200_OK)
 
@@ -364,9 +374,14 @@ class FeedbackGenerationView(APIView):
 
         feedback.save()
 
+        response_data = {
+            'id': feedback.id,
+            'feedback': response.text
+        }
+
         # cache feedback in redis for 30 minutes
-        cache.set(f'feedback_{submission.id}', response.text, 1800)
-        return Response({ 'feedback': response.text }, status=status.HTTP_200_OK)
+        cache.set(f'feedback_{submission.id}', response_data, 1800)
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class RateFeedbackView(APIView):

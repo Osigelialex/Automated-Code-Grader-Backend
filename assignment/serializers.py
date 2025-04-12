@@ -80,6 +80,7 @@ class AssignmentListSerializer(serializers.ModelSerializer):
 
 
 class AssignmentDetailSerializer(serializers.ModelSerializer):
+    student_attempted = serializers.SerializerMethodField()
     test_cases = TestCaseSerializer(many=True)
     course = CourseSerializer()
 
@@ -87,6 +88,15 @@ class AssignmentDetailSerializer(serializers.ModelSerializer):
         model = Assignment
         fields = '__all__'
         ordering = ['-created_at']
+    
+    def get_student_attempted(self, obj):
+        account = self.context['request'].user
+        if account.role == 'LECTURER':
+            return None
+        
+        if Submission.objects.filter(student=account).exists():
+            return True
+        return False
 
 
 class AssignmentSubmissionSerializer(serializers.Serializer):
