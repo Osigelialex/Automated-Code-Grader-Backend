@@ -7,10 +7,7 @@ from decouple import config
 
 def main():
     """Run administrative tasks."""
-    if config('DEBUG') == 'True':
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'checkmate.settings.development')
-    else:
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'checkmate.settings.production')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'checkmate.settings')
 
     try:
         from django.core.management import execute_from_command_line

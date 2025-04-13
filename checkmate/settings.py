@@ -11,6 +11,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
 
+DEBUG=False
+
+ALLOWED_HOSTS = ['.vercel.app', 'now.sh', '.render.com', 'onrender.com']
+
 REDIS_LOCATION = config('REDIS_LOCATION')
 REDIS_PASSWORD = config('REDIS_PASSWORD')
 RAPIDAPI_KEY = config('X_RAPIDAPI_KEY')
@@ -93,8 +97,8 @@ USE_TZ = True
 
 # Static files
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -197,3 +201,18 @@ CORS_ALLOW_METHODS = (
 CORS_ALLOW_HEADERS = (
     *default_headers,
 )
+
+# Redis config for production
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_LOCATION,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "PASSWORD": REDIS_PASSWORD,
+            "USERNAME": "default",
+            "SOCKET_CONNECT_TIMEOUT": 5,
+            "SOCKET_TIMEOUT": 5,
+        }
+    }
+}
