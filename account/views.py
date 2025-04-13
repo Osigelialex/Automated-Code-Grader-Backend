@@ -20,7 +20,7 @@ from .serializers import (
     ResetPasswordSerializer,
     ActivateAccountSerializer,
     ProfileDetailSerializer
-    )
+)
 
 
 class BaseRegisterationView(APIView):
@@ -29,12 +29,12 @@ class BaseRegisterationView(APIView):
     """
     authentication_classes = []
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        # send_activation_email.delay(user.id, user.first_name, user.email)
         try:
             email_manager.send_activation_email(user.id, user.first_name, user.email)
         except Exception as e:
@@ -81,7 +81,6 @@ class LoginView(TokenObtainPairView):
 
         user = serializer.validated_data
         if not user.email_verified:
-            # send_activation_email.delay(user.id, user.first_name, user.email)
             try:
                 email_manager.send_activation_email(user.id, user.first_name, user.email)
             except Exception as e:
@@ -116,7 +115,6 @@ class SendActivationTokenView(APIView):
             if user.email_verified == True:
                 return Response({ 'message': 'Account already activated'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # send_activation_email.delay(user.id, user.first_name, user.email)
             try:
                 email_manager.send_activation_email(user.id, user.first_name, user.email)
             except Exception as e:
@@ -230,7 +228,6 @@ class ForgottenPasswordView(APIView):
 
         try:
             user = CustomUser.objects.get(email=email)
-            # send_password_reset_email.delay(user.id, user.first_name, user.email)
             try:
                 email_manager.send_password_reset_email(user.id, user.first_name, user.email)
             except Exception as e:
@@ -252,6 +249,7 @@ class ResetPasswordView(APIView):
             200: MessageSerializer
         }
     )
+    @transaction.atomic
     def post(self, request, token):
         request.data['token'] = token
         serializer = self.serializer_class(data=request.data)
