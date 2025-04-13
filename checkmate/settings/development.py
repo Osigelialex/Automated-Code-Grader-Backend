@@ -5,7 +5,7 @@ from .base import *
 DEBUG = True
 
 # Allowed hosts for development
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.vercel.app']
 
 # Database
 DATABASE_URL = config('DATABASE_URL')
