@@ -1,4 +1,5 @@
 import os
+import dj_database_url
 from django.utils import timezone
 from pathlib import Path
 from decouple import config
@@ -102,6 +103,15 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+DATABASE_URL = config("DATABASE_URL")
+
+DATABASES = {
+    "default": dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=600,
+    ),
+}
 
 # REST Framework settings
 REST_FRAMEWORK = {
