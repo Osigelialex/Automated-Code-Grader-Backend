@@ -13,7 +13,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG=False
 
-ALLOWED_HOSTS = ['.vercel.app', 'now.sh', '.render.com', 'onrender.com']
+ALLOWED_HOSTS = ['.vercel.app', 'now.sh', '.render.com', 'checkmate-api-xfgf.onrender.com']
 
 REDIS_LOCATION = config('REDIS_LOCATION')
 REDIS_PASSWORD = config('REDIS_PASSWORD')
