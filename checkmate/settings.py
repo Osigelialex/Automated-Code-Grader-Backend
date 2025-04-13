@@ -107,7 +107,10 @@ WSGI_APPLICATION = 'checkmate.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASE_URL = env('PROD_DATABASE_URL')
+if DEBUG == True:
+    DATABASE_URL = env('DATABASE_URL')
+else:
+    DATABASE_URL = env('PROD_DATABASE_URL')
 
 DATABASES = {
     "default": dj_database_url.parse(
