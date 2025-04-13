@@ -44,7 +44,7 @@ class EmailManager:
             logger.error(f"Token generation failed for user {user_id}: {str(e)}")
             raise
     
-    def send_email(subject, recipient, context, template_name):
+    def send_email(self, subject, recipient, context, template_name):
         """
         Utility to send an email with HTML and plain text content.
 
@@ -136,7 +136,7 @@ class EmailManager:
             }
             
             self.send_email(
-                subject='password_reset.html',
+                subject='Reset your password',
                 recipient=email,
                 context=context,
                 template_name='password_reset.html'
