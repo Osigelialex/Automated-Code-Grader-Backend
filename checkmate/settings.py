@@ -44,7 +44,7 @@ GEMINI_API_KEY = env('GEMINI_API_KEY')
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG')
+DEBUG = env.bool('DEBUG')
 
 ALLOWED_HOSTS = ['.vercel.app', 'now.sh', '127.0.0.1','localhost']
 
@@ -107,7 +107,7 @@ WSGI_APPLICATION = 'checkmate.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASE_URL = env('DATABASE_URL')
+DATABASE_URL = env('PROD_DATABASE_URL')
 
 DATABASES = {
     "default": dj_database_url.parse(
