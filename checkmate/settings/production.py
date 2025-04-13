@@ -5,7 +5,7 @@ from .base import *
 DEBUG = False
 
 # Allowed hosts for production
-ALLOWED_HOSTS = ['.vercel.app', 'now.sh', 'checkmater.vercel.app']
+ALLOWED_HOSTS = ['.vercel.app', 'now.sh']
 
 # Database
 DATABASE_URL = config('PROD_DATABASE_URL')
