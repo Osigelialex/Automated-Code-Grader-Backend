@@ -14,7 +14,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG=False
 
-ALLOWED_HOSTS = ['.vercel.app', 'now.sh', '.render.com', 'checkmate-api-xfgf.onrender.com']
+ALLOWED_HOSTS = ['.vercel.app', 'now.sh', '127.0.0.1', '.render.com', 'checkmate-api-xfgf.onrender.com']
 
 REDIS_LOCATION = config('REDIS_LOCATION')
 REDIS_PASSWORD = config('REDIS_PASSWORD')
@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'assignment',
     'analytics',
     'corsheaders',
+    'checkmate',
     # third party
     'rest_framework',
     'rest_framework_simplejwt',
