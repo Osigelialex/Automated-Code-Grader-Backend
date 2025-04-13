@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Checkmate - Email Confirmation</title>
+    <title>Welcome to Checkmater - Email Confirmation</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -22,7 +22,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
         .email-header {
-            background-color: #1E3A8A;
+            background-color: #3b82f6;
             color: #ffffff;
             padding: 20px;
             text-align: center;
@@ -36,14 +36,14 @@
             margin: 0;
         }
         h2 {
-            color: #1E3A8A;
+            color: #3b82f6;
             font-size: 20px;
             margin-top: 0;
         }
         .button {
             display: inline-block;
             padding: 12px 24px;
-            background-color: #1E3A8A;
+            background-color: #3b82f6;
             color: #ffffff;
             text-decoration: none;
             border-radius: 5px;
@@ -53,7 +53,7 @@
             transition: background-color 0.3s ease;
         }
         .button:hover {
-            background-color: #0056b3;
+            background-color: #2563eb;
         }
         .footer {
             background-color: #f8f9fa;
@@ -62,8 +62,41 @@
             font-size: 12px;
             color: #6c757d;
         }
-        .logo {
-            max-width: 150px;
+        .code-block {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3b82f6;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .ai-feedback {
+            background-color: #ebf5ff;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+        }
+        .ai-feedback::before {
+            content: "AI";
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: absolute;
+            top: -15px;
+            left: 15px;
+        }
+        .logo-text {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffffff;
             margin-bottom: 10px;
         }
     </style>
@@ -71,20 +104,38 @@
 <body>
     <div class="email-container">
         <div class="email-header">
-            <img src="https://example.com/checkmate-logo.png" alt="Checkmate Logo" class="logo">
-            <h1>Welcome to Checkmate</h1>
+            <div class="logo-text">Checkmate</div>
+            <h1>Email Confirmation</h1>
         </div>
         <div class="email-content">
-            <h2>Hello, {{ first_name }}!</h2>
-            <p>Thank you for choosing Checkmate. We're excited to have you on board! To get started, please confirm your email address by clicking the button below:</p>
-            <a href="{{ confirmation_url }}" class="button">Confirm Your Email</a>
-            <p>This link will expire in 24 hours for security reasons. If you don't confirm your email within this time, you may need to request a new confirmation email.</p>
-            <p>If you didn't sign up for a Checkmate account, you can safely ignore this email.</p>
+            <h2>Hello {{ first_name }},</h2>
+            <p>Thank you for joining Checkmater, your programming assignment grading platform. We're excited to help you improve your coding skills with personalized feedback!</p>
+            
+            <div class="ai-feedback">
+                <p>I've processed your registration and everything looks great! Please confirm your email by clicking the button below to access all Checkmater features.</p>
+            </div>
+            
+            <div class="code-block">
+                // How Checkmater works:
+                function submitAssignment() {
+                  // Upload your code
+                  // Receive instant feedback
+                  // Improve and resubmit
+                  return "Optimized solution!";
+                }
+            </div>
+            
+            <a href="{{ confirmation_url }}" class="button">Confirm Email Address</a>
+            
+            <p>This confirmation link will expire in 15 minutes. If you don't confirm your email within this time, you'll need to request a new confirmation.</p>
+            
+            <p>If you did not create an account with us, please disregard this message.</p>
+            
             <p>Best regards,<br>The Checkmate Team</p>
         </div>
         <div class="footer">
-            <p>&copy; {{ year }} Checkmate. All rights reserved.</p>
-            <p>123 Coding Street, Tech City, TC 12345</p>
+            <p>&copy; {{ year }} Checkmater. All rights reserved.</p>
+            <p>This is a transactional email related to your account.</p>
         </div>
     </div>
 </body>

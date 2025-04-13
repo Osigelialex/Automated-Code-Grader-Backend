@@ -1,6 +1,6 @@
-# CheckMate
+# CheckMater
 
-CheckMate is an advanced automated grading system for the assessment of programming assignments. It combines automated test case evaluation with LLM-powered feedback to provide a comprehensive and efficient grading solution for programming courses.
+CheckMater is an advanced automated grading system for the assessment of programming assignments. It combines automated test case evaluation with LLM-powered feedback to provide a comprehensive and efficient grading solution for programming courses.
 
 ## Key Features
 

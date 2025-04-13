@@ -316,7 +316,7 @@ class TestRunFeedbackGenerationView(APIView):
         try:
             response = self.model.generate_content(prompt)
         except Exception as e:
-            return Response({ 'error': 'CheckMate AI is unavailable right now' })
+            return Response({ 'message': 'CheckMater AI is unavailable right now' })
 
         return Response({ 'feedback': response.text }, status=status.HTTP_200_OK)
 
@@ -364,7 +364,7 @@ class FeedbackGenerationView(APIView):
         try:
             response = self.model.generate_content(prompt)
         except Exception as e:
-            return Response({ 'error': 'CheckMate AI is unavailable right now' })
+            return Response({ 'message': 'CheckMate AI is unavailable right now' })
 
         # store response in database
         feedback = Feedback(

@@ -212,7 +212,7 @@ EMAIL_PORT = env('EMAIL_PORT')
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 
-DEFAULT_FROM_EMAIL='noreply@checkmate.com'
+DEFAULT_FROM_EMAIL='noreply@checkmater.com'
 
 LOGGING = {
     'version': 1,
@@ -246,32 +246,33 @@ LOGGING = {
     }
 }
 
-# Redis configuration
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": REDIS_LOCATION,
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#             "PASSWORD": REDIS_PASSWORD,
-#             "USERNAME": "default",
-#             "SOCKET_CONNECT_TIMEOUT": 5,
-#             "SOCKET_TIMEOUT": 5,
-#         }
-#     }
-# }
-
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://localhost:6379/0",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "SOCKET_CONNECT_TIMEOUT": 5,
-            "SOCKET_TIMEOUT": 5,
+# redis config
+if DEBUG == False:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_LOCATION,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "PASSWORD": REDIS_PASSWORD,
+                "USERNAME": "default",
+                "SOCKET_CONNECT_TIMEOUT": 5,
+                "SOCKET_TIMEOUT": 5,
+            }
         }
     }
-}
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": "redis://localhost:6379/0",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "SOCKET_CONNECT_TIMEOUT": 5,
+                "SOCKET_TIMEOUT": 5,
+            }
+        }
+    }
 
 CACHE_TTL = 60 * 15
 
@@ -280,7 +281,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://checkmate-theta.vercel.app",
-    "https://checkmate-api.vercel.app"
+    "https://checkmater.vercel.app"
 ]
 
 CORS_ALLOW_METHODS = (

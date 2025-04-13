@@ -97,7 +97,7 @@ class EmailManager:
             }
             
             self.send_email(
-                subject='Activate Your Checkmate Account',
+                subject='Activate Your Checkmater Account',
                 recipient=email,
                 context=context,
                 template_name='email_confirmation.html'
