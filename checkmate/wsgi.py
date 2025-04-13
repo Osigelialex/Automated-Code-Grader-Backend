@@ -10,8 +10,12 @@ https://docs.djangoproject.com/en/5.1/howto/deployment/wsgi/
 import os
 
 from django.core.wsgi import get_wsgi_application
+from decouple import config
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'checkmate.settings')
+if config('DEBUG') == 'True':
+  os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'checkmate.settings.development')
+else:
+  os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'checkmate.settings.production')
 
 application = get_wsgi_application()
 
