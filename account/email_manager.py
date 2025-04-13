@@ -1,7 +1,8 @@
 from django.template.loader import render_to_string
 from django.utils.crypto import get_random_string
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives, get_connection
 from django.db import transaction
+from django.utils.html import strip_tags
 from django.utils import timezone
 from django.conf import settings
 from django.core.cache import cache
@@ -43,39 +44,32 @@ class EmailManager:
             logger.error(f"Token generation failed for user {user_id}: {str(e)}")
             raise
     
-    def send_email(
-        self,
-        template_path: str,
-        context: Dict[str, Any],
-        subject: str,
-        to_email: str
-    ) -> None:
+    def send_email(subject, recipient, context, template_name):
         """
-        Send an HTML email using a template.
-        
+        Utility to send an email with HTML and plain text content.
+
         Args:
-            template_path: Path to the email template
-            context: Template context dictionary
             subject: Email subject
-            to_email: Recipient email address
-            
-        Raises:
-            TemplateDoesNotExist: If template is not found
-            SMTPException: If email sending fails
+            recipient: Recipient email address
+            context: Context for the email template
+            template_name: Path to the email template
         """
         try:
-            email_body = render_to_string(template_path, context)
-            email = EmailMessage(
-                subject=subject,
-                body=email_body,
-                from_email=self.from_email,
-                to=[to_email]
-            )
-            email.content_subtype = 'html'
-            email.send(fail_silently=False)
-            logger.info(f"Email sent successfully to {to_email}")
+            html_message = render_to_string(template_name, context)
+            plain_message = strip_tags(html_message)
+    
+            with get_connection() as connection:
+                email = EmailMultiAlternatives(
+                    subject=subject,
+                    body=plain_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[recipient],
+                    connection=connection,
+                )
+                email.attach_alternative(html_message, "text/html")
+                email.send()
         except Exception as e:
-            logger.error(f"Failed to send email to {to_email}: {str(e)}")
+            logger.error(f"Error sending email to {recipient}: {e}")
             raise
 
     @transaction.atomic
@@ -103,10 +97,10 @@ class EmailManager:
             }
             
             self.send_email(
-                template_path='email_confirmation.html',
-                context=context,
                 subject='Activate Your Checkmate Account',
-                to_email=email
+                recipient=email,
+                context=context,
+                template_name='email_confirmation.html'
             )
 
             logger.info(f'Confirmation url: {confirmation_url}')
@@ -142,10 +136,10 @@ class EmailManager:
             }
             
             self.send_email(
-                template_path='password_reset.html',
+                subject='password_reset.html',
+                recipient=email,
                 context=context,
-                subject='Reset your Checkmate password',
-                to_email=email
+                template_name='password_reset.html'
             )
 
             logger.info(f'Password reset url: {password_reset_url}')

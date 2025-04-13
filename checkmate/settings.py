@@ -204,10 +204,13 @@ SPECTACULAR_SETTINGS = {
 AUTH_USER_MODEL = 'account.CustomUser'
 
 # Email Configuration
+EMAIL_BACKEND = env('EMAIL_BACKEND')
 EMAIL_HOST = env('EMAIL_HOST')
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = env('EMAIL_PORT')
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
 
 DEFAULT_FROM_EMAIL='noreply@checkmate.com'
 
@@ -244,31 +247,31 @@ LOGGING = {
 }
 
 # Redis configuration
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_LOCATION,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "PASSWORD": REDIS_PASSWORD,
-            "USERNAME": "default",
-            "SOCKET_CONNECT_TIMEOUT": 5,
-            "SOCKET_TIMEOUT": 5,
-        }
-    }
-}
-
 # CACHES = {
 #     "default": {
 #         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": "redis://localhost:6379/0",
+#         "LOCATION": REDIS_LOCATION,
 #         "OPTIONS": {
 #             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#             "PASSWORD": REDIS_PASSWORD,
+#             "USERNAME": "default",
 #             "SOCKET_CONNECT_TIMEOUT": 5,
 #             "SOCKET_TIMEOUT": 5,
 #         }
 #     }
 # }
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://localhost:6379/0",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "SOCKET_CONNECT_TIMEOUT": 5,
+            "SOCKET_TIMEOUT": 5,
+        }
+    }
+}
 
 CACHE_TTL = 60 * 15
 
