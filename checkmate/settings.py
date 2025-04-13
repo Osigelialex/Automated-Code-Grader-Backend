@@ -27,6 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Reading the .env file
 environ.Env.read_env(BASE_DIR / '.env')
 
+REDIS_LOCATION = env('REDIS_LOCATION')
+REDIS_PASSWORD = env('REDIS_PASSWORD')
+
 # Rapid API Key
 RAPIDAPI_KEY = env('X_RAPIDAPI_KEY')
 RAPIDAPI_HOST = env('X_RAPIDAPI_HOST')
@@ -244,14 +247,28 @@ LOGGING = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://localhost:6379/0",
+        "LOCATION": REDIS_LOCATION,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "PASSWORD": REDIS_PASSWORD,
+            "USERNAME": "default",
             "SOCKET_CONNECT_TIMEOUT": 5,
             "SOCKET_TIMEOUT": 5,
         }
     }
 }
+
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": "redis://localhost:6379/0",
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#             "SOCKET_CONNECT_TIMEOUT": 5,
+#             "SOCKET_TIMEOUT": 5,
+#         }
+#     }
+# }
 
 CACHE_TTL = 60 * 15
 
