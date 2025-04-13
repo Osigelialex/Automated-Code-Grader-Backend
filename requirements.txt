@@ -34,6 +34,7 @@ google-generativeai==0.8.3
 googleapis-common-protos==1.66.0
 grpcio==1.67.1
 grpcio-status==1.67.1
+gunicorn==23.0.0
 httplib2==0.22.0
 idna==3.10
 inflection==0.5.1
@@ -51,6 +52,7 @@ pluggy==1.5.0
 prompt_toolkit==3.0.50
 proto-plus==1.25.0
 protobuf==5.28.3
+psycopg2==2.9.10
 psycopg2-binary==2.9.9
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
