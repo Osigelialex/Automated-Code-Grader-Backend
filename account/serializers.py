@@ -175,3 +175,7 @@ class ProfileDetailSerializer(serializers.ModelSerializer):
         else:
             data.pop('student_details', None)
         return data
+
+
+class TokenSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField()

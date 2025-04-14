@@ -19,7 +19,8 @@ from .serializers import (
     LoginUserSerializer,
     ResetPasswordSerializer,
     ActivateAccountSerializer,
-    ProfileDetailSerializer
+    ProfileDetailSerializer,
+    TokenSerializer
 )
 
 
@@ -41,9 +42,7 @@ class BaseRegisterationView(APIView):
             return Response({'message': 'Could not send your activation email'}, status=400)
         
         # store users email in httpOnly cookie for email resending purposes
-        response = Response({'message': 'Please check your email to verify your account'}, status=status.HTTP_201_CREATED)
-        response.set_cookie(key='email', value=user.email, httponly=True, secure=True, samesite='None', domain='checkmater.vercel.app')
-        return response
+        return Response({'message': 'Please check your email to verify your account'}, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(
@@ -92,9 +91,14 @@ class LoginView(TokenObtainPairView):
         access = refresh.access_token
         refresh['role'] = user.role
 
-        response = Response({ 'message': 'Login successful', 'role': user.role}, status=status.HTTP_200_OK)
-        response.set_cookie(key='access_token', value=str(access), httponly=True, secure=True, samesite='None', domain='checkmater.vercel.app')
-        response.set_cookie(key='refresh_token', value=str(refresh), httponly=True, secure=True, samesite='None', domain='checkmater.vercel.app')
+        response = Response({
+            'message': 'Login successful',
+            'role': user.role,
+            'tokens': {
+                'access_token': str(access),
+                'refresh_token': str(refresh)
+            }
+        }, status=status.HTTP_200_OK)
         return response
 
 
@@ -130,9 +134,13 @@ class RefreshTokenView(APIView):
     Refreshes the access token using the refresh token
     """
     authentication_classes = []
+    serialiizer_class = TokenSerializer
 
     def post(self, request, *args, **kwargs):
-        refresh_token = request.COOKIES.get('refresh_token')
+        serializer = self.serialiizer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        refresh_token = serializer.data['refresh_token']
         if not refresh_token:
             return Response({'message': 'Refresh token not included'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -140,8 +148,10 @@ class RefreshTokenView(APIView):
             refresh = RefreshToken(refresh_token)
             access_token = str(refresh.access_token)
 
-            response = Response({'message': 'Token refreshed successfully'}, status=status.HTTP_200_OK)
-            response.set_cookie(key='access_token', value=access_token, httponly=True, secure=True, samesite='None', domain='checkmater.vercel.app')
+            response = Response({
+                'message': 'Token refreshed successfully',
+                'access_token': access_token
+            }, status=status.HTTP_200_OK)
 
             return response
         except InvalidToken:
@@ -152,8 +162,13 @@ class LogoutView(APIView):
     """
     Logs out a user by blacklisting their refresh token and deleting the access and refresh tokens from cookies
     """
+    serializer_class = TokenSerializer
+
     def post(self, request, *args, **kwargs):
-        refresh_token = request.COOKIES.get("refresh_token")
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        refresh_token = serializer.validated_data['refresh_token']
         if not refresh_token:
             return Response({'message': 'Already logged out'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -161,12 +176,7 @@ class LogoutView(APIView):
             refresh = RefreshToken(refresh_token)
             refresh.blacklist()
         
-            response = Response({'message': 'Successfully logged out'})
-            response.delete_cookie('access_token')
-            response.delete_cookie('refresh_token')
-
-            return response
-
+            return Response({'message': 'Successfully logged out'})
         except Exception as e:
             return Response({ 'message': 'Could not invalidate token'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -208,10 +218,13 @@ class ActivateAccountView(APIView):
         access_token = refresh.access_token
         refresh['role'] = user.role
 
-        response = Response({ 'message': 'Account activated successfully'}, status=status.HTTP_200_OK)
-        response.set_cookie(key='access_token', value=str(access_token), httponly=True, secure=True, samesite='None', domain='checkmater.vercel.app')
-        response.set_cookie(key='refresh_token', value=str(refresh), httponly=True, secure=True, samesite='None', domain='checkmater.vercel.app')
-        return response
+        return Response({
+            'message': 'Account activated successfully',
+            'tokens': {
+                'access_token': str(access_token),
+                'refresh_token': str(refresh)
+            }
+        }, status=status.HTTP_200_OK)
 
 
 class ForgottenPasswordView(APIView):
