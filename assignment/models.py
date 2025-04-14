@@ -80,7 +80,7 @@ class Submission(models.Model):
 
 class Feedback(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
+    submission = models.ForeignKey(Submission, on_delete=models.SET_NULL, null=True)
     content = models.TextField()
     rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], null=True)
     generated_at = models.DateTimeField(auto_now_add=True)

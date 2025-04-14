@@ -7,14 +7,14 @@ from corsheaders.defaults import default_headers
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
 
 DEBUG=False
 
-ALLOWED_HOSTS = ['.vercel.app', 'now.sh', '127.0.0.1', '.render.com', 'checkmate-api-xfgf.onrender.com']
+ALLOWED_HOSTS = ["localhost", ".vercel.app", ".render.com", ".now.sh", ".onrender.com","127.0.0.1"]
 
 REDIS_LOCATION = config('REDIS_LOCATION')
 REDIS_PASSWORD = config('REDIS_PASSWORD')
@@ -201,6 +201,18 @@ CORS_ALLOWED_ORIGINS = [
     "https://checkmate-theta.vercel.app",
     "https://checkmater.vercel.app"
 ]
+CORS_ORIGIN_WHITELIST = (
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:8000",
+    "https://checkmater.vercel.app"
+)
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://checkmater.vercel.app"
+]
 CORS_ALLOW_METHODS = (
     "DELETE",
     "GET",
@@ -224,6 +236,7 @@ CACHES = {
             "USERNAME": "default",
             "SOCKET_CONNECT_TIMEOUT": 5,
             "SOCKET_TIMEOUT": 5,
+            "RETRY_ON_TIMEOUT": True
         }
     }
 }
