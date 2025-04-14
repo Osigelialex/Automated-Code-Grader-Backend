@@ -3,7 +3,7 @@ import dj_database_url
 from django.utils import timezone
 from pathlib import Path
 from decouple import config
-from corsheaders.defaults import default_headers
+from corsheaders.defaults import default_headers, default_methods
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -193,26 +193,28 @@ LOGGING = {
     }
 }
 
-# CORS settings
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://checkmate-theta.vercel.app",
-    "https://checkmater.vercel.app"
-]
-CORS_ORIGIN_WHITELIST = (
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://localhost:8000",
-    "https://checkmater.vercel.app"
+CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
+
+CORS_ALLOW_HEADERS = (
+    *default_headers,
+    "authorization",
+    "content-type",
 )
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "https://checkmater.vercel.app"
+CORS_ALLOW_METHODS = list(default_methods) + [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
 ]
+
+# CORS settings
+CORS_ALLOW_CREDENTIALS = True
+
 CORS_ALLOW_METHODS = (
     "DELETE",
     "GET",
@@ -220,9 +222,6 @@ CORS_ALLOW_METHODS = (
     "PATCH",
     "POST",
     "PUT",
-)
-CORS_ALLOW_HEADERS = (
-    *default_headers,
 )
 
 # Redis config for production
