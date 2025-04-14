@@ -42,7 +42,7 @@ class BaseRegisterationView(APIView):
         
         # store users email in httpOnly cookie for email resending purposes
         response = Response({'message': 'Please check your email to verify your account'}, status=status.HTTP_201_CREATED)
-        response.set_cookie(key='email', value=user.email, httponly=True, secure=True, samesite='None')
+        response.set_cookie(key='email', value=user.email, httponly=True, secure=True, samesite='None', domain='checkmater.vercel.app')
         return response
 
 
@@ -93,8 +93,8 @@ class LoginView(TokenObtainPairView):
         refresh['role'] = user.role
 
         response = Response({ 'message': 'Login successful', 'role': user.role}, status=status.HTTP_200_OK)
-        response.set_cookie(key='access_token', value=str(access), httponly=True, secure=True, samesite='None')
-        response.set_cookie(key='refresh_token', value=str(refresh), httponly=True, secure=True, samesite='None')
+        response.set_cookie(key='access_token', value=str(access), httponly=True, secure=True, samesite='None', domain='checkmater.vercel.app')
+        response.set_cookie(key='refresh_token', value=str(refresh), httponly=True, secure=True, samesite='None', domain='checkmater.vercel.app')
         return response
 
 
@@ -141,7 +141,7 @@ class RefreshTokenView(APIView):
             access_token = str(refresh.access_token)
 
             response = Response({'message': 'Token refreshed successfully'}, status=status.HTTP_200_OK)
-            response.set_cookie(key='access_token', value=access_token, httponly=True, secure=True, samesite='None')
+            response.set_cookie(key='access_token', value=access_token, httponly=True, secure=True, samesite='None', domain='checkmater.vercel.app')
 
             return response
         except InvalidToken:
@@ -209,8 +209,8 @@ class ActivateAccountView(APIView):
         refresh['role'] = user.role
 
         response = Response({ 'message': 'Account activated successfully'}, status=status.HTTP_200_OK)
-        response.set_cookie(key='access_token', value=str(access_token), httponly=True, secure=True, samesite='None')
-        response.set_cookie(key='refresh_token', value=str(refresh), httponly=True, secure=True, samesite='None')
+        response.set_cookie(key='access_token', value=str(access_token), httponly=True, secure=True, samesite='None', domain='checkmater.vercel.app')
+        response.set_cookie(key='refresh_token', value=str(refresh), httponly=True, secure=True, samesite='None', domain='checkmater.vercel.app')
         return response
 
 
