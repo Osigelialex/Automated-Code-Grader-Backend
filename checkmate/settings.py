@@ -231,7 +231,7 @@ CACHES = {
         "LOCATION": REDIS_LOCATION,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "PASSWORD": REDIS_PASSWORD,
+            # "PASSWORD": REDIS_PASSWORD,
             "USERNAME": "default",
             "SOCKET_CONNECT_TIMEOUT": 10,
             "SOCKET_TIMEOUT": 10,
